@@ -2,7 +2,8 @@ from os import environ
 from contextlib import asynccontextmanager
 from aiohttp import ClientSession
 from .api.v0 import aio_user
-
+from .api.v0 import aio_models as aio_model0
+from .api.v1 import aio_models as aio_model1
 
 class StraicoClient:
     def __init__(
@@ -47,6 +48,20 @@ class StraicoClient:
         if response.status == 200:
             return await response.json()
 
+    async def models(self, v=1):
+        if v==0:
+            response = await aio_model0(
+                self._session, self.BASE_URL, self._header, **self._client_settings
+            )
+        elif v==1:
+            response = await aio_model1(
+                self._session, self.BASE_URL, self._header, **self._client_settings
+            )
+        else:
+            raise Exception(f"Unsupported model api version {v}")
+
+        if response.status == 200:
+            return await response.json()
 
 @asynccontextmanager
 async def aio_straico_client(

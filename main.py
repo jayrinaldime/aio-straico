@@ -11,6 +11,14 @@ async def main():
         user_info = await client.user()
         pprint(user_info)
 
+        models = await client.models()
+        pprint(models)
+
+        models_v0 = await client.models(v=0)
+        pprint(models_v0)
+
+        models_v1 = await client.models(v=1)
+        pprint(models_v1)
 
 if __name__ == "__main__":
     asyncio.run(main())
