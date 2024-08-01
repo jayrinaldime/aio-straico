@@ -20,5 +20,6 @@ async def main():
         models_v1 = await client.models(v=1)
         pprint(models_v1)
 
+
 if __name__ == "__main__":
     asyncio.run(main())

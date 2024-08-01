@@ -5,6 +5,7 @@ from .api.v0 import aio_user
 from .api.v0 import aio_models as aio_model0
 from .api.v1 import aio_models as aio_model1
 
+
 class StraicoClient:
     def __init__(
         self, API_KEY: str = None, STRAICO_BASE_URL: str = None, **settings: dict
@@ -49,11 +50,11 @@ class StraicoClient:
             return await response.json()
 
     async def models(self, v=1):
-        if v==0:
+        if v == 0:
             response = await aio_model0(
                 self._session, self.BASE_URL, self._header, **self._client_settings
             )
-        elif v==1:
+        elif v == 1:
             response = await aio_model1(
                 self._session, self.BASE_URL, self._header, **self._client_settings
             )
@@ -62,6 +63,7 @@ class StraicoClient:
 
         if response.status == 200:
             return await response.json()
+
 
 @asynccontextmanager
 async def aio_straico_client(
