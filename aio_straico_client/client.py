@@ -1,9 +1,26 @@
 from os import environ
 from contextlib import asynccontextmanager
+from functools import wraps
 from aiohttp import ClientSession
 from .api.v0 import aio_user
 from .api.v0 import aio_models as aio_model0
 from .api.v1 import aio_models as aio_model1
+from .api.v0 import aio_prompt_completion as aio_prompt_completion0
+from aiohttp.client_exceptions import ServerDisconnectedError
+
+
+def aio_retry_on_disconnect(func):
+    @wraps(func)
+    async def retry_func(self, *args, **kwargs):
+        for i in range(1):
+            try:
+                r = await func(self, *args, **kwargs)
+                return r
+            except ServerDisconnectedError as e:
+                print("REconnect")
+                await self._reconnect()
+
+    return retry_func
 
 
 class StraicoClient:
@@ -30,6 +47,10 @@ class StraicoClient:
         self._session = ClientSession()
         self.__prepare_header()
 
+    async def _reconnect(self):
+        await self._session.close()
+        self._session = ClientSession()
+
     def __prepare_header(self):
         self._header = {"Authorization": f"Bearer {self._api_key}"}
 
@@ -42,6 +63,7 @@ class StraicoClient:
         self._api_key = API_KEY
         self.__prepare_header()
 
+    @aio_retry_on_disconnect
     async def user(self):
         response = await aio_user(
             self._session, self.BASE_URL, self._header, **self._client_settings
@@ -49,6 +71,7 @@ class StraicoClient:
         if response.status == 200:
             return await response.json()
 
+    @aio_retry_on_disconnect
     async def models(self, v=1):
         if v == 0:
             response = await aio_model0(
@@ -63,6 +86,21 @@ class StraicoClient:
 
         if response.status == 200:
             return await response.json()
+
+    @aio_retry_on_disconnect
+    async def prompt_completion(self, model, message):
+        if type(model) == dict and "model" in model:
+            model = model["model"]
+        response = await aio_prompt_completion0(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            model,
+            message,
+            **self._client_settings,
+        )
+        if response.status == 201:
+            return (await response.json())["data"]
 
 
 @asynccontextmanager

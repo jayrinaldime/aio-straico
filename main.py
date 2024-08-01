@@ -13,8 +13,8 @@ async def main():
         # client.API_KEY = "helo"
         # print(client.API_KEY)
 
-        user_info = await client.user()
-        pprint(user_info)
+        # user_info = await client.user()
+        # pprint(user_info)
 
         # models = await client.models()
         # pprint(models)
@@ -38,6 +38,12 @@ async def main():
 
         cheapest_chat_model = cheapest_model(models_v1)
         pprint(cheapest_chat_model)
+
+        reply = await client.prompt_completion(cheapest_chat_model, "Hello there")
+        print(reply["completion"]["choices"][0]["message"]["content"])
+        #await asyncio.sleep(60)
+        reply = await client.prompt_completion("openai/gpt-4o-mini", "Hello there")
+        print(reply["completion"]["choices"][0]["message"]["content"])
 
 
 if __name__ == "__main__":
