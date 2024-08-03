@@ -6,6 +6,7 @@ from .api.v0 import aio_user
 from .api.v0 import aio_models as aio_model0
 from .api.v1 import aio_models as aio_model1
 from .api.v0 import aio_prompt_completion as aio_prompt_completion0
+from .api.v1 import aio_prompt_completion as aio_prompt_completion1
 from .api.v0 import aio_file_upload
 from .api.v0 import aio_image_generation, ImageSize, ImageSizer
 from aiohttp.client_exceptions import ServerDisconnectedError
@@ -91,19 +92,65 @@ class StraicoClient:
             return await response.json()
 
     @aio_retry_on_disconnect
-    async def prompt_completion(self, model, message):
+    async def prompt_completion(
+        self,
+        model,
+        message,
+        *,
+        files: [Path | str] = [],
+        youtube_urls: [str] = [],
+        display_transcripts=False,
+    ):
+
         if type(model) == dict and "model" in model:
             model = model["model"]
-        response = await aio_prompt_completion0(
-            self._session,
-            self.BASE_URL,
-            self._header,
-            model,
-            message,
-            **self._client_settings,
-        )
+
+        if len(files) > 0 or len("youtube_urls") > 0:
+            v = 1
+        else:
+            v = 0
+
+        if v == 0:
+            response = await aio_prompt_completion0(
+                self._session,
+                self.BASE_URL,
+                self._header,
+                model,
+                message,
+                **self._client_settings,
+            )
+        elif v == 1:
+            file_urls = []
+            for file in files:
+                if isinstance(file, str):
+                    if not file.strip().lower().startswith("http"):
+                        file_path = Path(file)
+                        if file_path.exist():
+                            file_url = await self.upload_file(file)
+                        else:
+                            raise Exception(f"Unknown file {file}")
+                    else:
+                        file_url = file
+                elif isinstance(file, Path):
+                    file_url = await self.upload_file(file)
+                else:
+                    raise Exception(f"Unknown file type {type(file)} for file {file}")
+                file_urls.append(file_url)
+
+            response = await aio_prompt_completion1(
+                self._session,
+                self.BASE_URL,
+                self._header,
+                model,
+                message,
+                file_urls=file_urls,
+                youtube_urls=youtube_urls,
+                display_transcripts=display_transcripts,
+                **self._client_settings,
+            )
         if response.status == 201:
             return (await response.json())["data"]
+        return await response.text()
 
     @aio_retry_on_disconnect
     async def upload_file(self, file_to_upload: Path | str) -> str:
@@ -147,7 +194,7 @@ class StraicoClient:
             **self._client_settings,
         )
         if response.status == 201:
-            return (await response.json())["data"]['url']
+            return (await response.json())["data"]["url"]
 
     @aio_retry_on_disconnect
     async def image_generation(

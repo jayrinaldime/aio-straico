@@ -8,7 +8,7 @@ async def aio_prompt_completion(
     session,
     base_url: str,
     headers: dict,
-    model: str,
+    models,
     message,
     *,
     file_urls=[],
@@ -16,12 +16,14 @@ async def aio_prompt_completion(
     display_transcripts=False,
     **settings,
 ):
+    if type(models) == str:
+        models = [models]
     url = f"{base_url}/v1/prompt/completion"
-    json_body = {"model": model, "message": message}
+    json_body = {"models": models, "message": message}
 
-    if 0 < len(file_urls) < 4:
+    if 0 < len(file_urls) <= 4:
         json_body["file_urls"] = file_urls
-    if 0 < len(youtube_urls) < 4:
+    if 0 < len(youtube_urls) <= 4:
         json_body["youtube_urls"] = youtube_urls
     if display_transcripts:
         json_body["display_transcripts"] = True
