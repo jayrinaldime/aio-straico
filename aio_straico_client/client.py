@@ -98,7 +98,7 @@ class StraicoClient:
         message,
         *,
         files: [Path | str] = [],
-        youtube_urls: [str] = [],
+        youtube_urls:[str] = [],
         display_transcripts=False,
     ):
 
@@ -120,6 +120,9 @@ class StraicoClient:
                 **self._client_settings,
             )
         elif v == 1:
+            if isinstance(youtube_urls, str):
+                youtube_urls = [youtube_urls]
+
             file_urls = []
             for file in files:
                 if isinstance(file, str):

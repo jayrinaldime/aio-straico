@@ -7,6 +7,7 @@ from aio_straico_client.utils import (
     to_model_mapping_by_name,
 )
 
+from aio_straico_client.utils.transcript_utils import youtube_trasncript_to_plain_text
 from pathlib import Path
 from aio_straico_client.api.v0 import ImageSize
 
@@ -73,17 +74,40 @@ async def main():
         #     if image_path.exists():
         #         print("Image is downloaded", image_path)
 
-        mp3_files = [*Path("test_data/audio/").glob("*.mp3")]
-        f = mp3_files[2]
+        # mp3_files = [*Path("test_data/audio/").glob("*.mp3")]
+        # f = mp3_files[2]
         # response = await client.upload_file(f)
         # print(response)
         # print("test")
 
-        file01 = "https://prompt-rack.s3.amazonaws.com/api/1722689225122_784%2520-%2520Aligning%2520Large%2520Language%2520Models%252C%2520with%2520Sinan%2520Ozdemir.mp3"
+        # file01 = "https://prompt-rack.s3.amazonaws.com/api/1722689225122_784%2520-%2520Aligning%2520Large%2520Language%2520Models%252C%2520with%2520Sinan%2520Ozdemir.mp3"
+        # response = await client.prompt_completion(
+        #     "openai/gpt-4o-mini",
+        #     "summarize the main points",
+        #     files=mp3_files,
+        #     display_transcripts=True,
+        # )
+        #
+        # print("## Summary")
+        # print(
+        #     response["completions"]["openai/gpt-4o-mini"]["completion"]["choices"][0][
+        #         "message"
+        #     ]["content"]
+        # )
+        #
+        # print("## Transcript")
+        # for transcript in response["transcripts"]:
+        #     print("Name:", transcript["name"])
+        #     print("Transcript:", transcript["text"])
+        #     print()
+
+
+        youtube_url= "https://www.youtube.com/watch?v=3tQtiWwKJdI"
+
         response = await client.prompt_completion(
             "openai/gpt-4o-mini",
             "summarize the main points",
-            files=mp3_files,
+            youtube_urls=youtube_url,
             display_transcripts=True,
         )
 
@@ -97,7 +121,7 @@ async def main():
         print("## Transcript")
         for transcript in response["transcripts"]:
             print("Name:", transcript["name"])
-            print("Transcript:", transcript["text"])
+            print("Transcript:", youtube_trasncript_to_plain_text(transcript["text"]))
             print()
 
 
