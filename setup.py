@@ -15,7 +15,7 @@ setuptools.setup(
     author_email="jrinaldi@jayrinaldi.me",
     project_urls={
         "Source": "https://github.com/jayrinaldime/aio-straico",
-        # "Documentation": "https://github.com/jayrinaldime/aio-straico"
+        "Documentation": "https://github.com/jayrinaldime/aio-straico?tab=readme-ov-file#readme"
     },
     classifiers=[
         "Intended Audience :: Developers",
