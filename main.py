@@ -22,7 +22,7 @@ async def main():
         # models = await client.models()
         # pprint(models)
 
-        models_v1 = await client.models(v=1)
+        # models_v1 = await client.models(v=1)
         # pprint(models_v1)
 
         # models_v0 = await client.models(v=0)
@@ -48,30 +48,35 @@ async def main():
         # reply = await client.prompt_completion("openai/gpt-4o-mini", "Hello there")
         # print(reply["completion"]["choices"][0]["message"]["content"])
 
-        model = models_v1["data"]["image"][0]
-        directory = Path(".")
-        # with tempfile.TemporaryDirectory() as temp_directory:
-        zip_file_path = await client.image_generation_as_zipfile(
-            model=model,
-            description="A cute cat",
-            size=ImageSize.square,
-            variations=1,
-            destination_zip_path=directory,
-        )
-        if zip_file_path.exists():
-            print("Image is downloaded")
+        # model = models_v1["data"]["image"][0]
+        # directory = Path(".")
+        # # with tempfile.TemporaryDirectory() as temp_directory:
+        # zip_file_path = await client.image_generation_as_zipfile(
+        #     model=model,
+        #     description="A cute cat",
+        #     size=ImageSize.square,
+        #     variations=1,
+        #     destination_zip_path=directory,
+        # )
+        # if zip_file_path.exists():
+        #     print("Image is downloaded")
+        #
+        # # with tempfile.TemporaryDirectory() as temp_directory:
+        # image_paths = await client.image_generation_as_images(
+        #     model=model,
+        #     description="A cute cat",
+        #     size=ImageSize.square,
+        #     variations=1,
+        #     destination_directory_path=directory,
+        # )
+        # for image_path in image_paths:
+        #     if image_path.exists():
+        #         print("Image is downloaded", image_path)
 
-        # with tempfile.TemporaryDirectory() as temp_directory:
-        image_paths = await client.image_generation_as_images(
-            model=model,
-            description="A cute cat",
-            size=ImageSize.square,
-            variations=1,
-            destination_directory_path=directory,
-        )
-        for image_path in image_paths:
-            if image_path.exists():
-                print("Image is downloaded", image_path)
+        mp3_files = [*Path("test_data/audio/").glob("*.mp3")]
+        f = mp3_files[1]
+        response = await client.upload_file(f)
+        print(response)
         print("test")
 
 

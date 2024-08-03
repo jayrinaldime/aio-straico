@@ -6,6 +6,7 @@ from .api.v0 import aio_user
 from .api.v0 import aio_models as aio_model0
 from .api.v1 import aio_models as aio_model1
 from .api.v0 import aio_prompt_completion as aio_prompt_completion0
+from .api.v0 import aio_file_upload
 from .api.v0 import aio_image_generation, ImageSize, ImageSizer
 from aiohttp.client_exceptions import ServerDisconnectedError
 from pathlib import Path
@@ -103,6 +104,50 @@ class StraicoClient:
         )
         if response.status == 201:
             return (await response.json())["data"]
+
+    @aio_retry_on_disconnect
+    async def upload_file(self, file_to_upload: Path | str) -> str:
+        if type(file_to_upload) == str:
+            file_to_upload = Path(file_to_upload)
+        # pdf, docx, pptx, txt, xlsx, mp3, mp4, html, csv, json
+        content_type_mapping = {
+            "mp3": "audio/mpeg",
+            "mp4": "video/mp4",
+            "pdf": "application/pdf",
+            "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            "txt": "text/plain",
+            "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "html": "text/html",
+            "htm": "text/html",
+            "csv": "text/csv",
+            "json": "application/json",
+        }
+        if not file_to_upload.exists():
+            raise Exception(f"Cannot find file {file_to_upload}")
+
+        if not file_to_upload.is_file() or file_to_upload.is_dir():
+            raise Exception(f"Not a FILE {file_to_upload}")
+
+        with file_to_upload.open("rb") as binary_reader:
+            content = binary_reader.read(-1)
+
+        file_extension = file_to_upload.name.split(".")[-1].lower()
+
+        content_type = content_type_mapping.get(
+            file_extension, "application/octet-stream"
+        )
+        response = await aio_file_upload(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            filename=file_to_upload.name,
+            content_type=content_type,
+            binary_data=content,
+            **self._client_settings,
+        )
+        if response.status == 201:
+            return (await response.json())["data"]['url']
 
     @aio_retry_on_disconnect
     async def image_generation(
