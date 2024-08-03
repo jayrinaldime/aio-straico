@@ -105,7 +105,7 @@ class StraicoClient:
         if type(model) == dict and "model" in model:
             model = model["model"]
 
-        if len(files) > 0 or len("youtube_urls") > 0:
+        if len(files) > 0 or len(youtube_urls) > 0:
             v = 1
         else:
             v = 0
