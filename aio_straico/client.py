@@ -98,7 +98,7 @@ class StraicoClient:
         message,
         *,
         files: [Path | str] = [],
-        youtube_urls:[str] = [],
+        youtube_urls: [str] = [],
         display_transcripts=False,
     ):
 

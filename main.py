@@ -1,15 +1,15 @@
 import asyncio
-from aio_straico_client.client import aio_straico_client
+from aio_straico.client import aio_straico_client
 from pprint import pprint
-from aio_straico_client.utils import (
+from aio_straico.utils import (
     cheapest_model,
     to_model_mapping,
     to_model_mapping_by_name,
 )
 
-from aio_straico_client.utils.transcript_utils import youtube_trasncript_to_plain_text
+from aio_straico.utils.transcript_utils import youtube_trasncript_to_plain_text
 from pathlib import Path
-from aio_straico_client.api.v0 import ImageSize
+from aio_straico.api.v0 import ImageSize
 
 
 async def main():
@@ -101,8 +101,7 @@ async def main():
         #     print("Transcript:", transcript["text"])
         #     print()
 
-
-        youtube_url= "https://www.youtube.com/watch?v=3tQtiWwKJdI"
+        youtube_url = "https://www.youtube.com/watch?v=zWPe_CUR4yU"
 
         response = await client.prompt_completion(
             "openai/gpt-4o-mini",
