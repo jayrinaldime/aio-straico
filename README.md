@@ -27,10 +27,10 @@ async def main():
         user_info = await client.user()
         print(user_info)
         """
-        {'data': {'coins': 100000.00,
+        {'coins': 100000.00,
           'first_name': 'User',
           'last_name': 'Name',
-          'plan': 'License Tier 1'},
+          'plan': 'License Tier 1'}
         """
         
         models = await client.models()
