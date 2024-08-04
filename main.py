@@ -13,7 +13,7 @@ from aio_straico.api.v0 import ImageSize
 
 
 async def main():
-    async with aio_straico_client(ssl=False) as client:
+    async with aio_straico_client() as client:
         # client.API_KEY = "helo"
         # print(client.API_KEY)
 
@@ -23,22 +23,23 @@ async def main():
         # models = await client.models()
         # pprint(models)
 
-        # models_v1 = await client.models(v=1)
-        # pprint(models_v1)
-
-        models_v0 = await client.models(v=0)
+        models_v1 = await client.models(v=1)
+        print("Model V1")
+        pprint(models_v1)
+        #
+        # models_v0 = await client.models(v=0)
+        # print("Model V0")
         # pprint(models_v0)
         #
         # model_mapping = to_model_mapping(models_v0)
-        #
         # pprint(model_mapping)
         #
         # model_mapping = to_model_mapping_by_name(models_v0)
-        #
         # pprint(model_mapping)
 
         # cheapest_chat_model = cheapest_model(models_v0)
         # pprint(cheapest_chat_model)
+
 
         # cheapest_chat_model = cheapest_model(models_v1)
         # pprint(cheapest_chat_model)
@@ -49,7 +50,7 @@ async def main():
         # reply = await client.prompt_completion("openai/gpt-4o-mini", "Hello there")
         # print(reply["completion"]["choices"][0]["message"]["content"])
 
-        # model = models_v1["data"]["image"][0]
+        # model = models_v1["image"][0]
         # directory = Path(".")
         # # with tempfile.TemporaryDirectory() as temp_directory:
         # zip_file_path = await client.image_generation_as_zipfile(
@@ -75,19 +76,20 @@ async def main():
         #         print("Image is downloaded", image_path)
 
         # mp3_files = [*Path("test_data/audio/").glob("*.mp3")]
-        # f = mp3_files[2]
+        # f = mp3_files[3]
         # response = await client.upload_file(f)
         # print(response)
         # print("test")
 
-        # file01 = "https://prompt-rack.s3.amazonaws.com/api/1722689225122_784%2520-%2520Aligning%2520Large%2520Language%2520Models%252C%2520with%2520Sinan%2520Ozdemir.mp3"
+
+        file01 = "https://prompt-rack.s3.amazonaws.com/api/1722689225122_784%2520-%2520Aligning%2520Large%2520Language%2520Models%252C%2520with%2520Sinan%2520Ozdemir.mp3"
         # response = await client.prompt_completion(
         #     "openai/gpt-4o-mini",
         #     "summarize the main points",
         #     files=mp3_files,
         #     display_transcripts=True,
         # )
-        #
+        # #
         # print("## Summary")
         # print(
         #     response["completions"]["openai/gpt-4o-mini"]["completion"]["choices"][0][

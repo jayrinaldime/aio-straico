@@ -1,4 +1,3 @@
-from aiohttp import FormData
 from enum import Enum
 
 
@@ -19,6 +18,9 @@ async def aio_prompt_completion(
 ):
     url = f"{base_url}/v0/prompt/completion"
     json_body = {"model": model, "message": message}
+
+    if "timeout" not in settings:
+        settings["timeout"] = 60
     response = await session.post(url, headers=headers, json=json_body, **settings)
     return response
 
@@ -33,11 +35,12 @@ async def aio_file_upload(
     binary_data,
     **settings,
 ):
-    data = FormData()
-    data.add_field("file", binary_data, filename=filename, content_type=content_type)
-    url = f"{base_url}/v0/file/upload"
+    files = {"file": (filename, binary_data, content_type)}
 
-    response = await session.post(url, headers=headers, data=data, **settings)
+    url = f"{base_url}/v0/file/upload"
+    if "timeout" not in settings:
+        settings["timeout"] = 150
+    response = await session.post(url, headers=headers, files=files, **settings)
     return response
 
 
@@ -91,5 +94,7 @@ async def aio_image_generation(
         "size": size,
         "variations": variations,
     }
+    if "timeout" not in settings:
+        settings["timeout"] = 300
     response = await session.post(url, headers=headers, json=json_body, **settings)
     return response

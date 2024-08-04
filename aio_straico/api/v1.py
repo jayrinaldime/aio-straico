@@ -27,6 +27,7 @@ async def aio_prompt_completion(
         json_body["youtube_urls"] = youtube_urls
     if display_transcripts:
         json_body["display_transcripts"] = True
-
+    if "timeout" not in settings:
+        settings["timeout"] = 300
     response = await session.post(url, headers=headers, json=json_body, **settings)
     return response

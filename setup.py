@@ -6,7 +6,7 @@ import setuptools
 
 setuptools.setup(
     name="aio_straico",
-    version="0.0.3",
+    version="0.0.4",
     description="An unofficial async client library for Straico API",
     long_description=pathlib.Path("README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
@@ -15,7 +15,7 @@ setuptools.setup(
     author_email="jrinaldi@jayrinaldi.me",
     project_urls={
         "Source": "https://github.com/jayrinaldime/aio-straico",
-        "Documentation": "https://github.com/jayrinaldime/aio-straico?tab=readme-ov-file#readme"
+        "Documentation": "https://github.com/jayrinaldime/aio-straico?tab=readme-ov-file#readme",
     },
     classifiers=[
         "Intended Audience :: Developers",
@@ -37,7 +37,7 @@ setuptools.setup(
         "Operating System :: Microsoft :: Windows",
     ],
     python_requires=">=3.9,<=3.13",
-    install_requires=["aiohttp>=3.10.0"],
+    install_requires=["httpx>=0.27.0"],
     packages=setuptools.find_packages(),
-    include_package_data=True
+    include_package_data=True,
 )

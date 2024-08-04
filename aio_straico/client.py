@@ -1,7 +1,7 @@
 from os import environ
 from contextlib import asynccontextmanager
 from functools import wraps
-from aiohttp import ClientSession
+from httpx import AsyncClient
 from .api.v0 import aio_user
 from .api.v0 import aio_models as aio_model0
 from .api.v1 import aio_models as aio_model1
@@ -27,7 +27,7 @@ def aio_retry_on_disconnect(func):
     return retry_func
 
 
-class StraicoClient:
+class AsyncStraicoClient:
     def __init__(
         self, API_KEY: str = None, STRAICO_BASE_URL: str = None, **settings: dict
     ):
@@ -48,12 +48,12 @@ class StraicoClient:
 
         self.BASE_URL = STRAICO_BASE_URL
 
-        self._session = ClientSession()
+        self._session = AsyncClient()
         self.__prepare_header()
 
     async def _reconnect(self):
         await self._session.close()
-        self._session = ClientSession()
+        self._session = AsyncClient()
 
     def __prepare_header(self):
         self._header = {"Authorization": f"Bearer {self._api_key}"}
@@ -72,8 +72,8 @@ class StraicoClient:
         response = await aio_user(
             self._session, self.BASE_URL, self._header, **self._client_settings
         )
-        if response.status == 200:
-            return await response.json()
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
 
     @aio_retry_on_disconnect
     async def models(self, v=1):
@@ -88,8 +88,8 @@ class StraicoClient:
         else:
             raise Exception(f"Unsupported model api version {v}")
 
-        if response.status == 200:
-            return await response.json()
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
 
     @aio_retry_on_disconnect
     async def prompt_completion(
@@ -123,6 +123,9 @@ class StraicoClient:
             if isinstance(youtube_urls, str):
                 youtube_urls = [youtube_urls]
 
+            if isinstance(files, str):
+                files = [files]
+
             file_urls = []
             for file in files:
                 if isinstance(file, str):
@@ -151,9 +154,9 @@ class StraicoClient:
                 display_transcripts=display_transcripts,
                 **self._client_settings,
             )
-        if response.status == 201:
-            return (await response.json())["data"]
-        return await response.text()
+        if response.status_code == 201 and response.json()["success"]:
+            return response.json()["data"]
+
 
     @aio_retry_on_disconnect
     async def upload_file(self, file_to_upload: Path | str) -> str:
@@ -196,8 +199,8 @@ class StraicoClient:
             binary_data=content,
             **self._client_settings,
         )
-        if response.status == 201:
-            return (await response.json())["data"]["url"]
+        if response.status_code == 201 and response.json()["success"]:
+            return response.json()["data"]["url"]
 
     @aio_retry_on_disconnect
     async def image_generation(
@@ -216,8 +219,8 @@ class StraicoClient:
             variations=variations,
             **self._client_settings,
         )
-        if response.status == 201:
-            return (await response.json())["data"]
+        if response.status_code == 201 and response.json()["success"]:
+            return response.json()["data"]
 
     async def image_generation_as_zipfile(
         self,
@@ -237,7 +240,7 @@ class StraicoClient:
         zip_url = image_details["zip"]
 
         response = await self._session.get(zip_url, **self._client_settings)
-        content = await response.read()
+        content = response.read()
 
         if destination_zip_path.is_dir():
             zip_name = zip_url.split("/")[-1]
@@ -247,6 +250,9 @@ class StraicoClient:
             file_writer.write(content)
 
         return destination_zip_path
+
+    async def aclose(self):
+        await self._session.aclose()
 
     async def image_generation_as_images(
         self,
@@ -270,7 +276,7 @@ class StraicoClient:
         image_paths = []
         for image_url in image_urls:
             response = await self._session.get(image_url, **self._client_settings)
-            content = await response.read()
+            content = response.read()
 
             image_name = image_url.split("/")[-1]
             destination_image_path = destination_directory_path / image_name
@@ -288,9 +294,9 @@ async def aio_straico_client(
     API_KEY: str = None, STRAICO_BASE_URL: str = None, **settings: dict
 ):
     try:
-        client = StraicoClient(
+        client = AsyncStraicoClient(
             API_KEY=API_KEY, STRAICO_BASE_URL=STRAICO_BASE_URL, **settings
         )
         yield client
     finally:
-        await client._session.close()
+        await client.aclose()
