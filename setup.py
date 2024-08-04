@@ -7,7 +7,7 @@ import setuptools
 setuptools.setup(
     name="aio_straico",
     version="0.0.4",
-    description="An unofficial async client library for Straico API",
+    description="An unofficial async/sync client library for Straico API",
     long_description=pathlib.Path("README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
     url="https://github.com/jayrinaldime/aio-straico",
@@ -41,3 +41,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     include_package_data=True,
 )
+# Build step
+# python -m build
+# Push to pypi
+# python -m twine upload --repository testpypi dist/*

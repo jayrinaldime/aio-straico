@@ -1,9 +1,6 @@
 ## Async Client Libary for the Straico API
 
-A client side implementation of Straico API. 
-
-
-
+A client side implementation of Straico API.
 
 ### Installation
 
@@ -17,7 +14,46 @@ pip install aio-straico
 Please see the official Straico API documentation 
 https://documenter.getpostman.com/view/5900072/2s9YyzddrR
 
+
 ### Basic Prompt Completion 
+```python
+from aio_straico import straico_client
+from aio_straico.utils import cheapest_model 
+
+def main():
+    with straico_client(API_KEY="ko-11111111111111111111111111", ssl=False) as client:
+        user_info = client.user()
+        print(user_info)
+        """
+        {'coins': 100000.00,
+          'first_name': 'User',
+          'last_name': 'Name',
+          'plan': 'License Tier 1'}
+        """
+        
+        models = client.models()
+        cheapest_chat_model = cheapest_model(models)
+        print(cheapest_chat_model)
+        """
+        {'name': 'Google: Gemma 2 27B',  
+         'model': 'google/gemma-2-27b-it',
+         'word_limit': 3072,
+         'pricing': {'coins': 0.4, 
+                     'words': 100}}
+        """
+        
+        reply = client.prompt_completion(cheapest_chat_model, "Hello there")
+        print(reply["completion"]["choices"][0]["message"]["content"])
+        """
+        General Kenobi! 👋 
+
+        What can I do for you today? 😊
+        """
+if __name__=="__main__":
+    main()
+```
+
+### Async Basic Prompt Completion 
 ```python
 from aio_straico import aio_straico_client
 from aio_straico.utils import cheapest_model 
@@ -57,7 +93,6 @@ asyncio.run(main())
 when `API_KEY` is not set in aio_straico_client, it will use the value from environment variable `STRAICO_API_KEY`.
 If no environment variable is found the program will raise an error.
 
-
 You can also set the model name manually
 
 ```python
@@ -70,6 +105,9 @@ What can I do for you today? 😊
 """
 ```
 
+### Example Async Code 
+
+While the code below is async code, it can also be executed in a non-async mode by removing "await" and using the code with `straico_client` as shown in the "Basic Prompt Completion" section.
 #### Add file attachment and Transcript
 ```python
 mp3_files = [*Path("test_data/audio/").glob("*.mp3")]
@@ -167,3 +205,5 @@ image_paths = await client.image_generation_as_images(
     destination_zip_path=directory,
 )
 ```
+
+
