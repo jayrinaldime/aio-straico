@@ -21,7 +21,7 @@ from aio_straico import straico_client
 from aio_straico.utils import cheapest_model 
 
 def main():
-    with straico_client(API_KEY="ko-11111111111111111111111111", ssl=False) as client:
+    with straico_client(API_KEY="ko-11111111111111111111111111") as client:
         user_info = client.user()
         print(user_info)
         """
@@ -59,7 +59,7 @@ from aio_straico import aio_straico_client
 from aio_straico.utils import cheapest_model 
 
 async def main():
-    async with aio_straico_client(API_KEY="ko-11111111111111111111111111", ssl=False) as client:
+    async with aio_straico_client(API_KEY="ko-11111111111111111111111111") as client:
         user_info = await client.user()
         print(user_info)
         """
@@ -182,7 +182,6 @@ Transcript: . . .
 ```python
 model ="openai/dall-e-3"
 directory = Path(".")
-# with tempfile.TemporaryDirectory() as temp_directory:
 zip_file_path = await client.image_generation_as_zipfile(
     model=model,
     description="A cute cat",
@@ -196,7 +195,6 @@ zip_file_path = await client.image_generation_as_zipfile(
 ```python
 model ="openai/dall-e-3"
 directory = Path(".")
-# with tempfile.TemporaryDirectory() as temp_directory:
 image_paths = await client.image_generation_as_images(
     model=model,
     description="A cute cat",
