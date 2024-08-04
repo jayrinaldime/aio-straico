@@ -19,7 +19,7 @@ https://documenter.getpostman.com/view/5900072/2s9YyzddrR
 
 ### Basic Prompt Completion 
 ```python
-from aio_straico.client import aio_straico_client
+from aio_straico import aio_straico_client
 from aio_straico.utils import cheapest_model 
 
 async def main():

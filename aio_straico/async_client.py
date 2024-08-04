@@ -157,7 +157,6 @@ class AsyncStraicoClient:
         if response.status_code == 201 and response.json()["success"]:
             return response.json()["data"]
 
-
     @aio_retry_on_disconnect
     async def upload_file(self, file_to_upload: Path | str) -> str:
         if type(file_to_upload) == str:

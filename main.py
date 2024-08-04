@@ -1,5 +1,5 @@
 import asyncio
-from aio_straico.client import aio_straico_client
+from aio_straico import aio_straico_client
 from pprint import pprint
 from aio_straico.utils import (
     cheapest_model,
@@ -40,7 +40,6 @@ async def main():
         # cheapest_chat_model = cheapest_model(models_v0)
         # pprint(cheapest_chat_model)
 
-
         # cheapest_chat_model = cheapest_model(models_v1)
         # pprint(cheapest_chat_model)
         #
@@ -80,7 +79,6 @@ async def main():
         # response = await client.upload_file(f)
         # print(response)
         # print("test")
-
 
         file01 = "https://prompt-rack.s3.amazonaws.com/api/1722689225122_784%2520-%2520Aligning%2520Large%2520Language%2520Models%252C%2520with%2520Sinan%2520Ozdemir.mp3"
         # response = await client.prompt_completion(
