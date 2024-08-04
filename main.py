@@ -1,5 +1,5 @@
 import asyncio
-from aio_straico import aio_straico_client
+from aio_straico import aio_straico_client, straico_client
 from pprint import pprint
 from aio_straico.utils import (
     cheapest_model,
@@ -12,7 +12,7 @@ from pathlib import Path
 from aio_straico.api.v0 import ImageSize
 
 
-async def main():
+async def async_main():
     async with aio_straico_client() as client:
         # client.API_KEY = "helo"
         # print(client.API_KEY)
@@ -124,5 +124,92 @@ async def main():
             print()
 
 
+def main():
+    with straico_client() as client:
+        # user_info = client.user()
+        # pprint(user_info)
+        #
+        models = client.models()
+        # pprint(models)
+        # cheapest_chat_model = cheapest_model(models)
+        # # pprint(cheapest_chat_model)
+        #
+        # reply =  client.prompt_completion(cheapest_chat_model, "Hello there")
+        # print(reply["completion"]["choices"][0]["message"]["content"])
+        #
+        #
+        # reply =  client.prompt_completion("openai/gpt-4o-mini", "Hello there")
+        # print(reply["completion"]["choices"][0]["message"]["content"])
+
+        # model = models["image"][0]
+        # directory = Path(".")
+        # # with tempfile.TemporaryDirectory() as temp_directory:
+        # zip_file_path =  client.image_generation_as_zipfile(
+        #     model=model,
+        #     description="A cute cat",
+        #     size=ImageSize.square,
+        #     variations=1,
+        #     destination_zip_path=directory,
+        # )
+        # if zip_file_path.exists():
+        #     print("Image is downloaded")
+        #
+        # # with tempfile.TemporaryDirectory() as temp_directory:
+        # image_paths =  client.image_generation_as_images(
+        #     model=model,
+        #     description="A cute cat",
+        #     size=ImageSize.square,
+        #     variations=1,
+        #     destination_directory_path=directory,
+        # )
+        # for image_path in image_paths:
+        #     if image_path.exists():
+        #         print("Image is downloaded", image_path)
+
+        mp3_files = [*Path("test_data/audio/").glob("*.mp3")]
+
+        file01 = "https://prompt-rack.s3.amazonaws.com/api/1722689225122_784%2520-%2520Aligning%2520Large%2520Language%2520Models%252C%2520with%2520Sinan%2520Ozdemir.mp3"
+        # response =  client.prompt_completion(
+        #     "openai/gpt-4o-mini",
+        #     "summarize the main points",
+        #     files=mp3_files,
+        #     display_transcripts=True,
+        # )
+        # print("## Summary")
+        # print(
+        #     response["completions"]["openai/gpt-4o-mini"]["completion"]["choices"][0][
+        #         "message"
+        #     ]["content"]
+        # )
+        #
+        # print("## Transcript")
+        # for transcript in response["transcripts"]:
+        #     print("Name:", transcript["name"])
+        #     print("Transcript:", transcript["text"])
+        #     print()
+
+        youtube_url = "https://www.youtube.com/watch?v=zWPe_CUR4yU"
+
+        response = client.prompt_completion(
+            "openai/gpt-4o-mini",
+            "summarize the main points",
+            youtube_urls=youtube_url,
+            display_transcripts=True,
+        )
+        print("## Summary")
+        print(
+            response["completions"]["openai/gpt-4o-mini"]["completion"]["choices"][0][
+                "message"
+            ]["content"]
+        )
+
+        print("## Transcript")
+        for transcript in response["transcripts"]:
+            print("Name:", transcript["name"])
+            print("Transcript:", transcript["text"])
+            print()
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    # asyncio.run(async_main())
+    main()
