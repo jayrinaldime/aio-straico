@@ -5,7 +5,9 @@ from aio_straico.utils import (
     cheapest_model,
     to_model_mapping,
     to_model_mapping_by_name,
+    to_model_enum,
 )
+
 
 from aio_straico.utils.transcript_utils import youtube_trasncript_to_plain_text
 from pathlib import Path
@@ -24,6 +26,7 @@ async def async_main():
         # pprint(models)
 
         models_v1 = await client.models(v=1)
+        chat_models, image_models = to_model_enum(models_v1)
         print("Model V1")
         pprint(models_v1)
         #
@@ -45,9 +48,14 @@ async def async_main():
         #
         # reply = await client.prompt_completion(cheapest_chat_model, "Hello there")
         # print(reply["completion"]["choices"][0]["message"]["content"])
-        # # await asyncio.sleep(60)
-        # reply = await client.prompt_completion("openai/gpt-4o-mini", "Hello there")
-        # print(reply["completion"]["choices"][0]["message"]["content"])
+
+        reply = await client.prompt_completion(
+            chat_models.openai.gpt_4o_mini, "Hello there"
+        )
+        print(reply["completion"]["choices"][0]["message"]["content"])
+        # await asyncio.sleep(60)
+        reply = await client.prompt_completion("openai/gpt-4o-mini", "Hello there")
+        print(reply["completion"]["choices"][0]["message"]["content"])
 
         # model = models_v1["image"][0]
         # directory = Path(".")
@@ -104,7 +112,7 @@ async def async_main():
         youtube_url = "https://www.youtube.com/watch?v=zWPe_CUR4yU"
 
         response = await client.prompt_completion(
-            "openai/gpt-4o-mini",
+            chat_models.openai.gpt_4o_mini,
             "summarize the main points",
             youtube_urls=youtube_url,
             display_transcripts=True,
@@ -112,7 +120,7 @@ async def async_main():
 
         print("## Summary")
         print(
-            response["completions"]["openai/gpt-4o-mini"]["completion"]["choices"][0][
+            response["completions"][chat_models.openai.gpt_4o_mini.model]["completion"]["choices"][0][
                 "message"
             ]["content"]
         )
@@ -125,10 +133,11 @@ async def async_main():
 
 
 def main():
+
     with straico_client() as client:
-        # user_info = client.user()
-        # pprint(user_info)
-        #
+        user_info = client.user()
+        pprint(user_info)
+
         models = client.models()
         # pprint(models)
         # cheapest_chat_model = cheapest_model(models)
@@ -211,5 +220,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # asyncio.run(async_main())
-    main()
+    asyncio.run(async_main())
+    # main()

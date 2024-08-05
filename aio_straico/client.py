@@ -11,6 +11,7 @@ from .api.v0 import file_upload
 from .api.v0 import image_generation, ImageSize, ImageSizer
 from aiohttp.client_exceptions import ServerDisconnectedError
 from pathlib import Path
+from .utils.models_to_enum import Model
 
 
 def retry_on_disconnect(func):
@@ -104,6 +105,8 @@ class StraicoClient:
 
         if type(model) == dict and "model" in model:
             model = model["model"]
+        elif type(model) == Model:
+            model = model.model
 
         if len(files) > 0 or len(youtube_urls) > 0:
             v = 1
@@ -207,6 +210,8 @@ class StraicoClient:
     ):
         if type(model) == dict and "model" in model:
             model = model["model"]
+        elif type(model) == Model:
+            model = model.model
 
         response = image_generation(
             self._session,

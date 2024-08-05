@@ -4,3 +4,5 @@ from .transcript_utils import (
     youtube_trasncript_to_objects,
     youtube_trasncript_to_plain_text,
 )
+
+from .models_to_enum import to_model_enum
