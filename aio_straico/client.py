@@ -9,7 +9,7 @@ from .api.v0 import prompt_completion as prompt_completion0
 from .api.v1 import prompt_completion as prompt_completion1
 from .api.v0 import file_upload
 from .api.v0 import image_generation, ImageSize, ImageSizer
-from aiohttp.client_exceptions import ServerDisconnectedError
+from httpx import RemoteProtocolError
 from pathlib import Path
 from .utils.models_to_enum import Model
 
@@ -21,7 +21,7 @@ def retry_on_disconnect(func):
             try:
                 r = func(self, *args, **kwargs)
                 return r
-            except ServerDisconnectedError as e:
+            except RemoteProtocolError as e:
                 print("REconnect")
                 self._reconnect()
 
