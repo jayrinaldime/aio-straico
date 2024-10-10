@@ -20,6 +20,8 @@ async def aio_prompt_completion(
     file_urls=[],
     youtube_urls=[],
     display_transcripts=False,
+    temperature: float = None,
+    max_tokens: float = None,
     **settings,
 ):
     if type(models) == str:
@@ -35,6 +37,14 @@ async def aio_prompt_completion(
         json_body["display_transcripts"] = True
     if "timeout" not in settings:
         settings["timeout"] = 300
+    if temperature is not None:
+        temperature = max(min(temperature, 2), 0)
+        json_body["temperature"] = temperature
+
+    if max_tokens is not None:
+        max_tokens = max(max_tokens, 0)
+        if max_tokens > 0:
+            json_body["max_tokens"] = max_tokens
     response = await session.post(url, headers=headers, json=json_body, **settings)
     return response
 
@@ -49,6 +59,8 @@ def prompt_completion(
     file_urls=[],
     youtube_urls=[],
     display_transcripts=False,
+    temperature: float = None,
+    max_tokens: float = None,
     **settings,
 ):
     if type(models) == str:
@@ -64,5 +76,15 @@ def prompt_completion(
         json_body["display_transcripts"] = True
     if "timeout" not in settings:
         settings["timeout"] = 300
+
+    if temperature is not None:
+        temperature = max(min(temperature, 2), 0)
+        json_body["temperature"] = temperature
+
+    if max_tokens is not None:
+        max_tokens = max(max_tokens, 0)
+        if max_tokens > 0:
+            json_body["max_tokens"] = max_tokens
+
     response = session.post(url, headers=headers, json=json_body, **settings)
     return response

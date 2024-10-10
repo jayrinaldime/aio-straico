@@ -100,6 +100,8 @@ class StraicoClient:
         *,
         files: [Path | str] = [],
         youtube_urls: [str] = [],
+        temperature: float = None,
+        max_tokens: float = None,
         display_transcripts=False,
     ):
 
@@ -120,6 +122,8 @@ class StraicoClient:
                 self._header,
                 model,
                 message,
+                temperature=temperature,
+                max_tokens=max_tokens,
                 **self._client_settings,
             )
         elif v == 1:
@@ -155,6 +159,8 @@ class StraicoClient:
                 file_urls=file_urls,
                 youtube_urls=youtube_urls,
                 display_transcripts=display_transcripts,
+                temperature=temperature,
+                max_tokens=max_tokens,
                 **self._client_settings,
             )
         if response.status_code == 201 and response.json()["success"]:

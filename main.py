@@ -50,7 +50,10 @@ async def async_main():
         # print(reply["completion"]["choices"][0]["message"]["content"])
 
         reply = await client.prompt_completion(
-            chat_models.openai.gpt_4o_mini, "Hello there"
+            chat_models.openai.gpt_4o_mini,
+            "Tell me a joke",
+            temperature=2,
+            max_tokens=100,
         )
         print(reply["completion"]["choices"][0]["message"]["content"])
         # await asyncio.sleep(60)
@@ -109,27 +112,27 @@ async def async_main():
         #     print("Transcript:", transcript["text"])
         #     print()
 
-        youtube_url = "https://www.youtube.com/watch?v=zWPe_CUR4yU"
-
-        response = await client.prompt_completion(
-            chat_models.openai.gpt_4o_mini,
-            "summarize the main points",
-            youtube_urls=youtube_url,
-            display_transcripts=True,
-        )
-
-        print("## Summary")
-        print(
-            response["completions"][chat_models.openai.gpt_4o_mini.model]["completion"]["choices"][0][
-                "message"
-            ]["content"]
-        )
-
-        print("## Transcript")
-        for transcript in response["transcripts"]:
-            print("Name:", transcript["name"])
-            print("Transcript:", youtube_trasncript_to_plain_text(transcript["text"]))
-            print()
+        # youtube_url = "https://www.youtube.com/watch?v=zWPe_CUR4yU"
+        #
+        # response = await client.prompt_completion(
+        #     chat_models.openai.gpt_4o_mini,
+        #     "summarize the main points",
+        #     youtube_urls=youtube_url,
+        #     display_transcripts=True,
+        # )
+        #
+        # print("## Summary")
+        # print(
+        #     response["completions"][chat_models.openai.gpt_4o_mini.model]["completion"][
+        #         "choices"
+        #     ][0]["message"]["content"]
+        # )
+        #
+        # print("## Transcript")
+        # for transcript in response["transcripts"]:
+        #     print("Name:", transcript["name"])
+        #     print("Transcript:", youtube_trasncript_to_plain_text(transcript["text"]))
+        #     print()
 
 
 def main():
@@ -147,8 +150,10 @@ def main():
         # print(reply["completion"]["choices"][0]["message"]["content"])
         #
         #
-        # reply =  client.prompt_completion("openai/gpt-4o-mini", "Hello there")
-        # print(reply["completion"]["choices"][0]["message"]["content"])
+        reply = client.prompt_completion(
+            "openai/gpt-4o-mini", "tell me a joke", temperature=2.0, max_tokens=100
+        )
+        print(reply["completion"]["choices"][0]["message"]["content"])
 
         # model = models["image"][0]
         # directory = Path(".")
@@ -220,5 +225,5 @@ def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(async_main())
-    # main()
+    # asyncio.run(async_main())
+    main()

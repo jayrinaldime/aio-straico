@@ -26,25 +26,59 @@ def models(session, base_url: str, headers: dict, **settings):
 
 
 async def aio_prompt_completion(
-    session, base_url: str, headers: dict, model: str, message, **settings
+    session,
+    base_url: str,
+    headers: dict,
+    model: str,
+    message,
+    temperature: float = None,
+    max_tokens: float = None,
+    **settings,
 ):
     url = f"{base_url}/v0/prompt/completion"
     json_body = {"model": model, "message": message}
 
     if "timeout" not in settings:
         settings["timeout"] = 60
+
+    if temperature is not None:
+        temperature = max(min(temperature, 2), 0)
+        json_body["temperature"] = temperature
+
+    if max_tokens is not None:
+        max_tokens = max(max_tokens, 0)
+        if max_tokens > 0:
+            json_body["max_tokens"] = max_tokens
+
     response = await session.post(url, headers=headers, json=json_body, **settings)
     return response
 
 
 def prompt_completion(
-    session, base_url: str, headers: dict, model: str, message, **settings
+    session,
+    base_url: str,
+    headers: dict,
+    model: str,
+    message,
+    temperature: float = None,
+    max_tokens: float = None,
+    **settings,
 ):
     url = f"{base_url}/v0/prompt/completion"
     json_body = {"model": model, "message": message}
 
     if "timeout" not in settings:
         settings["timeout"] = 60
+
+    if temperature is not None:
+        temperature = max(min(temperature, 2), 0)
+        json_body["temperature"] = temperature
+
+    if max_tokens is not None:
+        max_tokens = max(max_tokens, 0)
+        if max_tokens > 0:
+            json_body["max_tokens"] = max_tokens
+
     response = session.post(url, headers=headers, json=json_body, **settings)
     return response
 
