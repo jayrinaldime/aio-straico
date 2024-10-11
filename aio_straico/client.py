@@ -103,6 +103,7 @@ class StraicoClient:
         temperature: float = None,
         max_tokens: float = None,
         display_transcripts=False,
+        raw_output=False,
     ):
 
         if type(model) == dict and "model" in model:
@@ -164,7 +165,10 @@ class StraicoClient:
                 **self._client_settings,
             )
         if response.status_code == 201 and response.json()["success"]:
-            return response.json()["data"]
+            if raw_output:
+                return response.json()
+            else:
+                return response.json()["data"]
 
     @retry_on_disconnect
     def upload_file(self, file_to_upload: Path | str) -> str:
