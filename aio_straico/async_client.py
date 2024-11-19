@@ -13,7 +13,7 @@ from httpx import RemoteProtocolError
 from pathlib import Path
 
 from .utils.models_to_enum import Model
-
+from .utils import is_listable_not_string
 
 def aio_retry_on_disconnect(func):
     @wraps(func)
@@ -113,11 +113,11 @@ class AsyncStraicoClient:
             model = model.model
 
         if len(files) > 0 or len(youtube_urls) > 0:
-            if len(files) > 4:
+            if is_listable_not_string(files) and len(files) > 4:
                 raise Exception(
                     f"Too many attached files. API is limited to 4 File attachments"
                 )
-            if len(youtube_urls) > 4:
+            if is_listable_not_string(youtube_urls) and len(youtube_urls) > 4:
                 raise Exception(
                     f"Too many youtube_urls files. API is limited to 4 Youtube URL attachments"
                 )

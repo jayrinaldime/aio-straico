@@ -6,3 +6,9 @@ from .transcript_utils import (
 )
 
 from .models_to_enum import to_model_enum
+
+
+from collections.abc import Iterable
+
+def is_listable_not_string(obj):
+    return not isinstance(obj, str) and isinstance(obj, Iterable)
