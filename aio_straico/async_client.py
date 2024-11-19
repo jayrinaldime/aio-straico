@@ -113,6 +113,14 @@ class AsyncStraicoClient:
             model = model.model
 
         if len(files) > 0 or len(youtube_urls) > 0:
+            if len(files) > 4:
+                raise Exception(
+                    f"Too many attached files. API is limited to 4 File attachments"
+                )
+            if len(youtube_urls) > 4:
+                raise Exception(
+                    f"Too many youtube_urls files. API is limited to 4 Youtube URL attachments"
+                )
             v = 1
         else:
             v = 0

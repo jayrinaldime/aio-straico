@@ -6,7 +6,7 @@ import setuptools
 
 setuptools.setup(
     name="aio_straico",
-    version="0.0.8",
+    version="0.0.9",
     description="An unofficial async/sync client library for Straico API",
     long_description=pathlib.Path("README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
