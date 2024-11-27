@@ -14,6 +14,7 @@ from pathlib import Path
 
 from .utils.models_to_enum import Model
 from .utils import is_listable_not_string
+from .api.v0_rag import ChunkingMethod, BreakpointThresholdType,  aio_create_rag, aio_rags, aio_rag, aio_rag_delete
 
 
 def aio_retry_on_disconnect(func):
@@ -312,6 +313,76 @@ class AsyncStraicoClient:
 
         return image_paths
 
+    @aio_retry_on_disconnect
+    async def create_rag(self,
+                         name: str,
+                         description: str,
+                         *file_to_uploads: [Path | str],
+                         chunking_method: [ChunkingMethod | str] = None,
+                         chunk_size: int = 1000,
+                         chunk_overlap: int = 50,
+                         breakpoint_threshold_type: [
+                             BreakpointThresholdType | str
+                         ] = BreakpointThresholdType.percentile,
+                         buffer_size: int = 500) -> str:
+
+        if len(file_to_uploads) > 4:
+            raise Exception("Too many files, Only accepts up to 4 Files per RAG Instance")
+        if len(file_to_uploads) == 0:
+            raise Exception("Requires atleast 1 File per RAG Instance")
+
+
+        response = await aio_create_rag(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            name=name,
+            description=description,
+            chunking_method=chunking_method,
+            chunk_size = chunk_size,
+            chunk_overlap= chunk_overlap,
+            breakpoint_threshold_type = breakpoint_threshold_type,
+            buffer_size = buffer_size,
+            files = file_to_uploads,
+            **self._client_settings,
+        )
+        if response.status_code == 201 and response.json()["success"]:
+            return response.json()
+
+    @aio_retry_on_disconnect
+    async def rags(self) -> str:
+        response = await aio_rags(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()
+
+    @aio_retry_on_disconnect
+    async def rag(self, rag_id: str) -> str:
+        response = await aio_rag(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            rag_id,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()
+
+    @aio_retry_on_disconnect
+    async def rag_delete(self, rag_id: str) -> str:
+        response = await aio_rag_delete(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            rag_id,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()
 
 @asynccontextmanager
 async def aio_straico_client(
