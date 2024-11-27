@@ -15,6 +15,7 @@ from pathlib import Path
 from .utils.models_to_enum import Model
 from .utils import is_listable_not_string
 
+
 def aio_retry_on_disconnect(func):
     @wraps(func)
     async def retry_func(self, *args, **kwargs):

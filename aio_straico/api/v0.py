@@ -98,6 +98,7 @@ async def aio_file_upload(
     url = f"{base_url}/v0/file/upload"
     if "timeout" not in settings:
         settings["timeout"] = 150
+
     response = await session.post(url, headers=headers, files=files, **settings)
     return response
 

@@ -14,6 +14,7 @@ from pathlib import Path
 from .utils.models_to_enum import Model
 from .utils import is_listable_not_string
 
+
 def retry_on_disconnect(func):
     @wraps(func)
     def retry_func(self, *args, **kwargs):
@@ -205,7 +206,7 @@ class StraicoClient:
         with file_to_upload.open("rb") as binary_reader:
             content = binary_reader.read(-1)
 
-        file_extension = file_to_upload.name.split(".")[-1].lower()
+        file_extension = file_to_upload.name.split(".")[-1].strip().lower()
 
         content_type = content_type_mapping.get(
             file_extension, "application/octet-stream"
