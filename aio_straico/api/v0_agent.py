@@ -48,7 +48,7 @@ async def aio_add_rag_to_agent(
 
 
 async def aio_agents(session, base_url: str, headers: dict, **settings):
-    url = f"{base_url}/v0/agent/"
+    url = f"{base_url}/v0/agent"
     response = await session.get(url, headers=headers, **settings)
     return response
 
@@ -59,7 +59,7 @@ async def aio_agent(session, base_url: str, headers: dict, agent_id: str, **sett
     return response
 
 
-async def aio_rag_delete(
+async def aio_agent_delete(
     session, base_url: str, headers: dict, agent_id: str, **settings
 ):
     url = f"{base_url}/v0/agent/{agent_id}"
@@ -105,4 +105,38 @@ async def aio_agent_prompt_completion(
         payload["score_threshold"] = score_threshold
 
     response = await session.post(url, headers=headers, data=payload, **settings)
+    return response
+
+
+async def aio_agent_update(
+    session,
+    base_url: str,
+    headers: dict,
+    agent_id: str,
+    *,
+    rag_id: str = None,
+    name: str = None,
+    description: str = None,
+    model: str = None,
+    system_prompt: str = None,
+    tags: [str] = None,
+    **settings,
+):
+    url = f"{base_url}/v0/agent/{agent_id}"
+
+    payload = {}
+    if rag_id is not None:
+        payload["rag"] = rag_id
+    if name is not None:
+        payload["name"] = name
+    if description is not None:
+        payload["description"] = description
+    if system_prompt is not None:
+        payload["custom_prompt"] = system_prompt
+    if model is not None:
+        payload["default_llm"] = model
+    if tags is not None:
+        payload["tags"] = tags
+
+    response = await session.put(url, headers=headers, data=payload, **settings)
     return response

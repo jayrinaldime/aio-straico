@@ -1,3 +1,3 @@
 httpx
-pytest
-pytest-asyncio  # For async test support
+# pytest
+# pytest-asyncio  # For async test support

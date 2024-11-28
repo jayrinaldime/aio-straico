@@ -14,6 +14,35 @@ from pathlib import Path
 from aio_straico.api.v0 import ImageSize
 
 
+async def async_main_obj():
+    async with aio_straico_client() as client:
+        rag_obj_new = await client.new_rag(
+            "Test1",
+            "Test Rag",
+            Path("./aio_straico/utils/models.py"),
+            Path("./aio_straico/utils/models_to_enum.py"),
+            Path("./aio_straico/utils/transcript_utils.py"),
+            Path("./aio_straico/api/v0_rag.py"),
+        )
+        pprint(rag_obj_new.data)
+        r = await rag_obj_new.delete()
+        pprint(r)
+
+        rag_obj, *_ = await client.rag_objects()
+        pprint(rag_obj.data)
+
+        await rag_obj.refresh()
+        pprint(rag_obj.data)
+
+        models = await client.models()
+        cheapest_chat_model = cheapest_model(models)
+        r = await rag_obj.prompt_completion(
+            cheapest_chat_model, "How to get the cheapest Model ?"
+        )
+
+        pprint(r)
+
+
 async def async_main():
     async with aio_straico_client() as client:
         # r = await client.create_rag("Test1", "Test Rag",
@@ -24,7 +53,7 @@ async def async_main():
         #                   )
         # pprint(r)
 
-        r,*_ = await client.rags()
+        r, *_ = await client.rags()
         pprint(r)
         print(r["_id"])
 
@@ -44,4 +73,4 @@ async def async_main():
 
 
 if __name__ == "__main__":
-    asyncio.run(async_main())
+    asyncio.run(async_main_obj())
