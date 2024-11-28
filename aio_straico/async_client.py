@@ -26,6 +26,16 @@ from .api.v0_rag import (
 )
 
 
+from .api.v0_agent import (
+    aio_create_agent,
+    aio_agents,
+    aio_agent,
+    aio_agent_prompt_completion,
+    aio_add_rag_to_agent,
+    aio_rag_delete,
+)
+
+
 def aio_retry_on_disconnect(func):
     @wraps(func)
     async def retry_func(self, *args, **kwargs):
@@ -359,7 +369,7 @@ class AsyncStraicoClient:
             **self._client_settings,
         )
         if response.status_code == 201 and response.json()["success"]:
-            return response.json()
+            return response.json()["data"]
 
     @aio_retry_on_disconnect
     async def rags(self) -> str:
@@ -370,7 +380,7 @@ class AsyncStraicoClient:
             **self._client_settings,
         )
         if response.status_code == 200 and response.json()["success"]:
-            return response.json()
+            return response.json()["data"]
 
     @aio_retry_on_disconnect
     async def rag(self, rag_id: str) -> str:
@@ -382,7 +392,7 @@ class AsyncStraicoClient:
             **self._client_settings,
         )
         if response.status_code == 200 and response.json()["success"]:
-            return response.json()
+            return response.json()["data"]
 
     @aio_retry_on_disconnect
     async def rag_delete(self, rag_id: str) -> str:
@@ -394,7 +404,7 @@ class AsyncStraicoClient:
             **self._client_settings,
         )
         if response.status_code == 200 and response.json()["success"]:
-            return response.json()
+            return response.json()["data"]
 
     @aio_retry_on_disconnect
     async def rag_prompt_completion(
@@ -429,7 +439,115 @@ class AsyncStraicoClient:
             **self._client_settings,
         )
         if response.status_code == 200 and response.json()["success"]:
-            return response.json()
+            return response.json()["response"]
+
+    @aio_retry_on_disconnect
+    async def create_agent(
+        self,
+        name: str,
+        description: str,
+        model: str,
+        system_prompt: str,
+        tags: [str] = [],
+    ) -> str:
+        if type(model) == dict and "model" in model:
+            model = model["model"]
+        elif type(model) == Model:
+            model = model.model
+
+        response = await aio_create_agent(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            name=name,
+            description=description,
+            model=model,
+            system_prompt=system_prompt,
+            tags=tags,
+            **self._client_settings,
+        )
+        if response.status_code == 201 and response.json()["success"]:
+            return response.json()["data"]
+
+    @aio_retry_on_disconnect
+    async def agents(self) -> str:
+        response = await aio_agents(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
+
+    @aio_retry_on_disconnect
+    async def agent(self, agent_id: str) -> str:
+        response = await aio_rag(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            agent_id,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
+
+    @aio_retry_on_disconnect
+    async def agent_delete(self, agent_id: str) -> dict:
+        response = await aio_rag_delete(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            agent_id,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
+
+    @aio_retry_on_disconnect
+    async def agent_add_rag(self, agent_id: str, rag_id: [dict | str]) -> dict:
+        if type(rag_id) == dict and "_id" in rag_id:
+            rag_id = rag_id["_id"]
+
+        response = await aio_add_rag_to_agent(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            agent_id,
+            rag_id,
+            **self._client_settings,
+        )
+
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
+
+    @aio_retry_on_disconnect
+    async def agent_prompt_completion(
+        self,
+        agent_id: str,
+        message: str,
+        search_type: [SearchType | str] = None,
+        k: int = None,
+        fetch_k: int = None,
+        lambda_mult: float = None,
+        score_threshold: float = None,
+    ) -> dict:
+
+        response = await aio_agent_prompt_completion(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            agent_id,
+            message,
+            search_type,
+            k,
+            fetch_k,
+            lambda_mult,
+            score_threshold,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["response"]
 
 
 @asynccontextmanager

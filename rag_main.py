@@ -24,11 +24,11 @@ async def async_main():
         #                   )
         # pprint(r)
 
-        r = await client.rags()
+        r,*_ = await client.rags()
         pprint(r)
-        print(r["data"][0]["_id"])
+        print(r["_id"])
 
-        rag_id = r["data"][0]["_id"]
+        rag_id = r["_id"]
         # r = await client.rag(rag_id)
         # pprint(r)
 
@@ -36,7 +36,12 @@ async def async_main():
         # pprint(r)
         models = await client.models()
         cheapest_chat_model = cheapest_model(models)
-        r = await client.rag_prompt_completion(rag_id, cheapest_chat_model, "How to get the cheapest Model ?" )
+        r = await client.rag_prompt_completion(
+            rag_id, cheapest_chat_model, "How to get the cheapest Model ?"
+        )
+
         pprint(r)
+
+
 if __name__ == "__main__":
     asyncio.run(async_main())
