@@ -141,8 +141,8 @@ def main():
         user_info = client.user()
         pprint(user_info)
 
-        models = client.models()
-        # pprint(models)
+        models = client.models(v=1)
+        pprint(models)
         cheapest_chat_model = cheapest_model(models)
         # # pprint(cheapest_chat_model)
         #

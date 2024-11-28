@@ -53,6 +53,9 @@ async def aio_create_rag(
 ):
     url = f"{base_url}/v0/rag"
 
+    if "timeout" not in settings:
+        settings["timeout"] = 600
+
     filepaths = [file if isinstance(file, Path) else Path(file) for file in files]
     if not all((file.exists() for file in filepaths)):
         pass
@@ -146,6 +149,9 @@ async def aio_rag_prompt_completion(
         "prompt": message,
         "model": model,
     }
+
+    if "timeout" not in settings:
+        settings["timeout"] = 600
 
     if search_type is not None:
         search_type = SearchType(search_type)

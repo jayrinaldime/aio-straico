@@ -37,37 +37,37 @@ async def async_main():
         #                                     *client_files
         #                                     )
 
-        *_, api_rag, utils_rag, client_rag = await client.rags()
-        models = await client.models()
-        cheapest_chat_model = cheapest_model(models)
-        r = await client.create_agent(
-            "AIO Straico Python Agent",
-            "An Agent that understand the code for aio-straico library",
-            cheapest_chat_model,
-            "You are helpful **Python** coding assistant for the library aio-straico. Always answer using the context provided. Please do not answer if no information is available for the user question.",
-            ["Python", "aio-straico"],
-        )
-        pprint(r)
-        agent_id = r["_id"]
+        # *_, api_rag, utils_rag, client_rag = await client.rags()
+        # models = await client.models()
+        # cheapest_chat_model = cheapest_model(models)
+        # r = await client.create_agent(
+        #     "AIO Straico Python Agent",
+        #     "An Agent that understand the code for aio-straico library",
+        #     cheapest_chat_model,
+        #     "You are helpful **Python** coding assistant for the library aio-straico. Always answer using the context provided. Please do not answer if no information is available for the user question.",
+        #     ["Python", "aio-straico"],
+        # )
+        # pprint(r)
+        # agent_id = r["_id"]
 
-        r = await client.agents()
-        pprint(r)
+        # r = await client.agents()
+        # pprint(r)
 
-        r = await client.agent(agent_id)
-        pprint(r)
-
-        r = await client.agent_add_rag(agent_id, api_rag)
-        pprint(r)
-
-        r = await client.agent_add_rag(agent_id, utils_rag)
-        pprint(r)
-
-        r = await client.agent_add_rag(agent_id, client_rag)
-        pprint(r)
-        # agent_id = "67482c8e5962c57393ecb173"
+        # r = await client.agent(agent_id)
+        # pprint(r)
+        #
+        # r = await client.agent_add_rag(agent_id, api_rag)
+        # pprint(r)
+        #
+        # r = await client.agent_add_rag(agent_id, utils_rag)
+        # pprint(r)
+        #
+        # r = await client.agent_add_rag(agent_id, client_rag)
+        # pprint(r)
+        agent_id = "67482db25962c57393ecb1b4"
 
         r = await client.agent_prompt_completion(
-            agent_id, "How to get the cheapest Model ?"
+            agent_id, "Please add comment to function `aio_straico_client`. Please also give example usage on how to use `aio_straico_client`"
         )
         pprint(r)
 

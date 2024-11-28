@@ -84,6 +84,10 @@ async def aio_agent_prompt_completion(
     payload = {
         "prompt": message,
     }
+
+    if "timeout" not in settings:
+        settings["timeout"] = 600
+
     if search_type is not None:
         search_type = SearchType(search_type)
         payload["search_type"] = search_type
