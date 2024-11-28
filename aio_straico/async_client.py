@@ -621,7 +621,7 @@ class AsyncStraicoClient:
     async def agent_update(
         self,
         agent_id: str,
-        rag: [dict | str] = None,
+        rag: [AsyncStraicoRAG | dict | str] = None,
         name: str = None,
         description: str = None,
         model: str = None,
@@ -629,8 +629,12 @@ class AsyncStraicoClient:
         tags: [str] = None,
     ) -> str:
 
-        if rag is not None and type(rag) == dict and "_id" in rag:
-            rag = rag["_id"]
+        if rag is not None:
+            rag_type = type(rag)
+            if rag_type == dict and "_id" in rag:
+                rag = rag["_id"]
+            elif rag_type == AsyncStraicoRAG:
+                rag = rag.data["_id"]
 
         if type(model) == dict and "model" in model:
             model = model["model"]

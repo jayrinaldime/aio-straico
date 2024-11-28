@@ -43,7 +43,7 @@ class AsyncStraicoAgent:
     async def update(
         self,
         *,
-        rag: [dict | str] = None,
+        rag: [AsyncStraicoRAG | dict | str] = None,
         name: str = None,
         description: str = None,
         model: str = None,
