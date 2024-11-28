@@ -9,7 +9,6 @@ from aio_straico.utils import (
 )
 
 
-
 from aio_straico.utils.transcript_utils import youtube_trasncript_to_plain_text
 from pathlib import Path
 from aio_straico.api.v0 import ImageSize
@@ -26,14 +25,18 @@ async def async_main():
         # pprint(r)
 
         r = await client.rags()
-
+        pprint(r)
         print(r["data"][0]["_id"])
-        pprint(r)
-        rag_id = r["data"][0]["_id"]
-        r = await client.rag(rag_id)
-        pprint(r)
 
-        r = await client.rag_delete(rag_id)
+        rag_id = r["data"][0]["_id"]
+        # r = await client.rag(rag_id)
+        # pprint(r)
+
+        # r = await client.rag_delete(rag_id)
+        # pprint(r)
+        models = await client.models()
+        cheapest_chat_model = cheapest_model(models)
+        r = await client.rag_prompt_completion(rag_id, cheapest_chat_model, "How to get the cheapest Model ?" )
         pprint(r)
 if __name__ == "__main__":
     asyncio.run(async_main())

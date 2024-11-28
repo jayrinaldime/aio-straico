@@ -14,7 +14,16 @@ from pathlib import Path
 
 from .utils.models_to_enum import Model
 from .utils import is_listable_not_string
-from .api.v0_rag import ChunkingMethod, BreakpointThresholdType,  aio_create_rag, aio_rags, aio_rag, aio_rag_delete
+from .api.v0_rag import (
+    ChunkingMethod,
+    BreakpointThresholdType,
+    SearchType,
+    aio_create_rag,
+    aio_rags,
+    aio_rag,
+    aio_rag_delete,
+    aio_rag_prompt_completion,
+)
 
 
 def aio_retry_on_disconnect(func):
@@ -314,23 +323,26 @@ class AsyncStraicoClient:
         return image_paths
 
     @aio_retry_on_disconnect
-    async def create_rag(self,
-                         name: str,
-                         description: str,
-                         *file_to_uploads: [Path | str],
-                         chunking_method: [ChunkingMethod | str] = None,
-                         chunk_size: int = 1000,
-                         chunk_overlap: int = 50,
-                         breakpoint_threshold_type: [
-                             BreakpointThresholdType | str
-                         ] = BreakpointThresholdType.percentile,
-                         buffer_size: int = 500) -> str:
+    async def create_rag(
+        self,
+        name: str,
+        description: str,
+        *file_to_uploads: [Path | str],
+        chunking_method: [ChunkingMethod | str] = None,
+        chunk_size: int = 1000,
+        chunk_overlap: int = 50,
+        breakpoint_threshold_type: [
+            BreakpointThresholdType | str
+        ] = BreakpointThresholdType.percentile,
+        buffer_size: int = 500,
+    ) -> str:
 
         if len(file_to_uploads) > 4:
-            raise Exception("Too many files, Only accepts up to 4 Files per RAG Instance")
+            raise Exception(
+                "Too many files, Only accepts up to 4 Files per RAG Instance"
+            )
         if len(file_to_uploads) == 0:
             raise Exception("Requires atleast 1 File per RAG Instance")
-
 
         response = await aio_create_rag(
             self._session,
@@ -339,11 +351,11 @@ class AsyncStraicoClient:
             name=name,
             description=description,
             chunking_method=chunking_method,
-            chunk_size = chunk_size,
-            chunk_overlap= chunk_overlap,
-            breakpoint_threshold_type = breakpoint_threshold_type,
-            buffer_size = buffer_size,
-            files = file_to_uploads,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            breakpoint_threshold_type=breakpoint_threshold_type,
+            buffer_size=buffer_size,
+            files=file_to_uploads,
             **self._client_settings,
         )
         if response.status_code == 201 and response.json()["success"]:
@@ -383,6 +395,42 @@ class AsyncStraicoClient:
         )
         if response.status_code == 200 and response.json()["success"]:
             return response.json()
+
+    @aio_retry_on_disconnect
+    async def rag_prompt_completion(
+        self,
+        rag_id: str,
+        model: str,
+        message: str,
+        search_type: [SearchType | str] = None,
+        k: int = None,
+        fetch_k: int = None,
+        lambda_mult: float = None,
+        score_threshold: float = None,
+    ) -> str:
+
+        if type(model) == dict and "model" in model:
+            model = model["model"]
+        elif type(model) == Model:
+            model = model.model
+
+        response = await aio_rag_prompt_completion(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            rag_id,
+            model,
+            message,
+            search_type,
+            k,
+            fetch_k,
+            lambda_mult,
+            score_threshold,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()
+
 
 @asynccontextmanager
 async def aio_straico_client(

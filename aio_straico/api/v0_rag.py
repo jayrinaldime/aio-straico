@@ -75,8 +75,7 @@ async def aio_create_rag(
         with file.open("rb") as reader:
             content = reader.read(-1)
             files_parameter.append(
-                ('files', (file.name, content, 'application/octet-stream'))
-
+                ("files", (file.name, content, "application/octet-stream"))
             )
 
     payload = {"name": name, "description": description}
