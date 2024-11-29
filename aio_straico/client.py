@@ -3,6 +3,16 @@ from contextlib import contextmanager
 from functools import wraps
 from httpx import Client
 from .api.v0 import user
+from .api.v0_agent import (
+    create_agent as api_create_agent,
+    agents as api_agents,
+    agent as api_agent,
+    agent_delete as api_agent_delete,
+    agent_prompt_completion as api_agent_prompt_completion,
+    agent_update as api_agent_update,
+    add_rag_to_agent as api_add_rag_to_agent,
+)
+from .client_agent import StraicoAgent
 from .api.v0 import models as model0
 from .api.v1 import models as model1
 from .api.v0 import prompt_completion as prompt_completion0
@@ -360,6 +370,228 @@ class StraicoClient:
 
     @retry_on_disconnect
     def rag_prompt_completion(
+        self,
+        rag_id: str,
+        model: str,
+        message: str,
+        search_type: [SearchType | str] = None,
+        k: int = None,
+        fetch_k: int = None,
+        lambda_mult: float = None,
+        score_threshold: float = None,
+    ) -> str:
+        if type(model) == dict and "model" in model:
+            model = model["model"]
+        elif type(model) == Model:
+            model = model.model
+
+        response = api_rag_prompt_completion(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            rag_id,
+            model,
+            message,
+            search_type,
+            k,
+            fetch_k,
+            lambda_mult,
+            score_threshold,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["response"]
+
+    @retry_on_disconnect
+    def create_agent(
+        self,
+        name: str,
+        description: str,
+        model: str,
+        system_prompt: str,
+        tags: [str] = [],
+        rag: [StraicoRAG | dict | str] = None,
+    ) -> str:
+        if type(model) == dict and "model" in model:
+            model = model["model"]
+        elif type(model) == Model:
+            model = model.model
+
+        response = api_create_agent(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            name=name,
+            description=description,
+            model=model,
+            system_prompt=system_prompt,
+            tags=tags,
+            **self._client_settings,
+        )
+        if response.status_code == 201 and response.json()["success"]:
+            _agent = response.json()["data"]
+            if rag is not None:
+                rag_type = type(rag)
+                if rag_type == dict and "_id" in rag:
+                    rag = rag["_id"]
+                if rag_type == StraicoRAG:
+                    rag = rag.data["_id"]
+                return self.agent_add_rag(_agent["_id"], rag)
+            return _agent
+
+    @retry_on_disconnect
+    def agents(self, *, with_tag: str = None) -> str:
+        response = api_agents(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            _agents = response.json()["data"]
+            if with_tag is None:
+                return _agents
+            return [agent for agent in _agents if with_tag in agent["tag"]]
+
+    @retry_on_disconnect
+    def agent(self, agent_id: str) -> str:
+        response = api_agent(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            agent_id,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
+
+    @retry_on_disconnect
+    def agent_delete(self, agent_id: str) -> dict:
+        response = api_agent_delete(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            agent_id,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()
+
+    @retry_on_disconnect
+    def agent_add_rag(
+        self, agent_id: str, rag_id: [StraicoRAG | dict | str]
+    ) -> dict:
+        rag_type = type(rag_id)
+        if rag_type == dict and "_id" in rag_id:
+            rag_id = rag_id["_id"]
+        elif rag_type == StraicoRAG:
+            rag_id = rag_id.data["_id"]
+
+        response = api_add_rag_to_agent(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            agent_id,
+            rag_id,
+            **self._client_settings,
+        )
+
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
+
+    @retry_on_disconnect
+    def agent_prompt_completion(
+        self,
+        agent_id: str,
+        message: str,
+        search_type: [SearchType | str] = None,
+        k: int = None,
+        fetch_k: int = None,
+        lambda_mult: float = None,
+        score_threshold: float = None,
+    ) -> dict:
+        response = api_agent_prompt_completion(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            agent_id,
+            message,
+            search_type,
+            k,
+            fetch_k,
+            lambda_mult,
+            score_threshold,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["response"]
+
+    @retry_on_disconnect
+    def agent_update(
+        self,
+        agent_id: str,
+        rag: [StraicoRAG | dict | str] = None,
+        name: str = None,
+        description: str = None,
+        model: str = None,
+        system_prompt: str = None,
+        tags: [str] = None,
+    ) -> str:
+        if rag is not None:
+            rag_type = type(rag)
+            if rag_type == dict and "_id" in rag:
+                rag = rag["_id"]
+            elif rag_type == StraicoRAG:
+                rag = rag.data["_id"]
+
+        if type(model) == dict and "model" in model:
+            model = model["model"]
+        elif type(model) == Model:
+            model = model.model
+
+        response = api_agent_update(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            agent_id,
+            rag_id=rag,
+            name=name,
+            description=description,
+            model=model,
+            system_prompt=system_prompt,
+            tags=tags,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
+
+    def agent_object(self, agent_id):
+        data = self.agent(agent_id=agent_id)
+        agent_obj = StraicoAgent(self, data)
+        return agent_obj
+
+    def agent_objects(self, *, with_tag: str = None):
+        _agents = self.agents(with_tag=with_tag)
+        return [StraicoAgent(self, agent) for agent in _agents]
+
+    def new_agent(
+        self,
+        name: str,
+        description: str,
+        model: str,
+        system_prompt: str,
+        tags: [str] = [],
+        rag: [StraicoRAG | dict | str] = None,
+    ) -> str:
+        _agent = self.create_agent(
+            name=name,
+            description=description,
+            model=model,
+            system_prompt=system_prompt,
+            tags=tags,
+            rag=rag,
+        )
+        return StraicoAgent(self, _agent)
         self,
         rag_id: str,
         model: str,
