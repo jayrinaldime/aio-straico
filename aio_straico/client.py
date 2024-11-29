@@ -9,6 +9,16 @@ from .api.v0 import prompt_completion as prompt_completion0
 from .api.v1 import prompt_completion as prompt_completion1
 from .api.v0 import file_upload
 from .api.v0 import image_generation, ImageSize, ImageSizer
+from .api.v0_rag import (
+    ChunkingMethod,
+    BreakpointThresholdType,
+    SearchType,
+    create_rag as api_create_rag,
+    rags as api_rags,
+    rag as api_rag,
+    rag_delete as api_rag_delete,
+    rag_prompt_completion as api_rag_prompt_completion,
+)
 from httpx import RemoteProtocolError
 from pathlib import Path
 from .utils.models_to_enum import Model
@@ -274,6 +284,113 @@ class StraicoClient:
 
     def close(self):
         self._session.close()
+
+    @retry_on_disconnect
+    def create_rag(
+        self,
+        name: str,
+        description: str,
+        *file_to_uploads: [Path | str],
+        chunking_method: [ChunkingMethod | str] = None,
+        chunk_size: int = 1000,
+        chunk_overlap: int = 50,
+        breakpoint_threshold_type: [
+            BreakpointThresholdType | str
+        ] = BreakpointThresholdType.percentile,
+        buffer_size: int = 500,
+    ) -> str:
+        if len(file_to_uploads) > 4:
+            raise Exception(
+                "Too many files, Only accepts up to 4 Files per RAG Instance"
+            )
+        if len(file_to_uploads) == 0:
+            raise Exception("Requires at least 1 File per RAG Instance")
+
+        response = api_create_rag(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            name=name,
+            description=description,
+            chunking_method=chunking_method,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            breakpoint_threshold_type=breakpoint_threshold_type,
+            buffer_size=buffer_size,
+            files=file_to_uploads,
+            **self._client_settings,
+        )
+        if response.status_code == 201 and response.json()["success"]:
+            return response.json()["data"]
+
+    @retry_on_disconnect
+    def rags(self) -> str:
+        response = api_rags(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
+
+    @retry_on_disconnect
+    def rag(self, rag_id: str) -> str:
+        response = api_rag(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            rag_id,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
+
+    @retry_on_disconnect
+    def rag_delete(self, rag_id: str) -> str:
+        response = api_rag_delete(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            rag_id,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()
+
+    @retry_on_disconnect
+    def rag_prompt_completion(
+        self,
+        rag_id: str,
+        model: str,
+        message: str,
+        search_type: [SearchType | str] = None,
+        k: int = None,
+        fetch_k: int = None,
+        lambda_mult: float = None,
+        score_threshold: float = None,
+    ) -> str:
+        if type(model) == dict and "model" in model:
+            model = model["model"]
+        elif type(model) == Model:
+            model = model.model
+
+        response = api_rag_prompt_completion(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            rag_id,
+            model,
+            message,
+            search_type,
+            k,
+            fetch_k,
+            lambda_mult,
+            score_threshold,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["response"]
 
     def image_generation_as_images(
         self,
