@@ -8,10 +8,9 @@ from .api.v1 import aio_models as aio_model1
 from .api.v0 import aio_prompt_completion as aio_prompt_completion0
 from .api.v1 import aio_prompt_completion as aio_prompt_completion1
 from .api.v0 import aio_file_upload
-from .api.v0 import aio_image_generation, ImageSize, ImageSizer
+from .api.v0 import aio_image_generation, ImageSize
 from httpx import RemoteProtocolError
 from pathlib import Path
-
 from .utils.models_to_enum import Model
 from .utils import is_listable_not_string
 from .api.v0_rag import (
@@ -24,8 +23,6 @@ from .api.v0_rag import (
     aio_rag_delete,
     aio_rag_prompt_completion,
 )
-
-
 from .api.v0_agent import (
     aio_create_agent,
     aio_agents,
@@ -35,7 +32,6 @@ from .api.v0_agent import (
     aio_agent_delete,
     aio_agent_update,
 )
-
 from .async_client_agent import AsyncStraicoAgent
 from .async_client_rag import AsyncStraicoRAG
 
