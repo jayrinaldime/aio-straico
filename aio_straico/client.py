@@ -12,13 +12,12 @@ from .api.v0_agent import (
     agent_update as api_agent_update,
     add_rag_to_agent as api_add_rag_to_agent,
 )
-from .client_agent import StraicoAgent
 from .api.v0 import models as model0
 from .api.v1 import models as model1
 from .api.v0 import prompt_completion as prompt_completion0
 from .api.v1 import prompt_completion as prompt_completion1
 from .api.v0 import file_upload
-from .api.v0 import image_generation, ImageSize, ImageSizer
+from .api.v0 import image_generation, ImageSize
 from .api.v0_rag import (
     ChunkingMethod,
     BreakpointThresholdType,
@@ -33,7 +32,6 @@ from httpx import RemoteProtocolError
 from pathlib import Path
 from .utils.models_to_enum import Model
 from .utils import is_listable_not_string
-
 from .client_agent import StraicoAgent
 from .client_rag import StraicoRAG
 
