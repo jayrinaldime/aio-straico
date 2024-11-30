@@ -72,33 +72,33 @@ async def async_main():
         pprint(r)
 
 
-def main():
+def main_obj():
     with straico_client() as client:
-        # r = client.create_rag("Test1", "Test Rag",
-        #                   Path("./aio_straico/utils/models.py"),
-        #                   Path("./aio_straico/utils/models_to_enum.py"),
-        #                   Path("./aio_straico/utils/transcript_utils.py"),
-        #                   Path("./aio_straico/api/v0_rag.py"),
-        #                   )
-        # pprint(r)
-
-        r, *_ = client.rags()
+        rag_obj_new = client.new_rag(
+            "Test1",
+            "Test Rag",
+            Path("./aio_straico/utils/models.py"),
+            Path("./aio_straico/utils/models_to_enum.py"),
+            Path("./aio_straico/utils/transcript_utils.py"),
+            Path("./aio_straico/api/v0_rag.py"),
+        )
+        pprint(rag_obj_new.data)
+        r = rag_obj_new.delete()
         pprint(r)
-        print(r["_id"])
 
-        rag_id = r["_id"]
-        # r = client.rag(rag_id)
-        # pprint(r)
+        rag_obj, *_ = client.rag_objects()
+        pprint(rag_obj.data)
 
-        # r = client.rag_delete(rag_id)
-        # pprint(r)
+        rag_obj.refresh()
+        pprint(rag_obj.data)
+
         models = client.models()
         cheapest_chat_model = cheapest_model(models)
-        r = client.rag_prompt_completion(
-            rag_id, cheapest_chat_model, "How to get the cheapest Model ?"
+        r = rag_obj.prompt_completion(
+            cheapest_chat_model, "How to get the cheapest Model ?"
         )
 
         pprint(r)
 
 if __name__ == "__main__":
-    main()
+    main_obj()
