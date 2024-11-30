@@ -14,6 +14,31 @@ from pathlib import Path
 
 from .utils.models_to_enum import Model
 from .utils import is_listable_not_string
+from .api.v0_rag import (
+    ChunkingMethod,
+    BreakpointThresholdType,
+    SearchType,
+    aio_create_rag,
+    aio_rags,
+    aio_rag,
+    aio_rag_delete,
+    aio_rag_prompt_completion,
+)
+
+
+from .api.v0_agent import (
+    aio_create_agent,
+    aio_agents,
+    aio_agent,
+    aio_agent_prompt_completion,
+    aio_add_rag_to_agent,
+    aio_agent_delete,
+    aio_agent_update,
+)
+
+from .async_client_agent import AsyncStraicoAgent
+from .async_client_rag import AsyncStraicoRAG
+
 
 def aio_retry_on_disconnect(func):
     @wraps(func)
@@ -223,6 +248,9 @@ class AsyncStraicoClient:
         if response.status_code == 201 and response.json()["success"]:
             return response.json()["data"]["url"]
 
+    #################################
+    # Image Generation API
+    ##############################
     @aio_retry_on_disconnect
     async def image_generation(
         self, model, description: str, size: ImageSize | str, variations: int
@@ -310,6 +338,356 @@ class AsyncStraicoClient:
             image_paths.append(destination_image_path)
 
         return image_paths
+
+    #################################
+    # RAG API
+    ##############################
+    @aio_retry_on_disconnect
+    async def create_rag(
+        self,
+        name: str,
+        description: str,
+        *file_to_uploads: [Path | str],
+        chunking_method: [ChunkingMethod | str] = None,
+        chunk_size: int = 1000,
+        chunk_overlap: int = 50,
+        breakpoint_threshold_type: [
+            BreakpointThresholdType | str
+        ] = BreakpointThresholdType.percentile,
+        buffer_size: int = 500,
+    ) -> str:
+
+        if len(file_to_uploads) > 4:
+            raise Exception(
+                "Too many files, Only accepts up to 4 Files per RAG Instance"
+            )
+        if len(file_to_uploads) == 0:
+            raise Exception("Requires atleast 1 File per RAG Instance")
+
+        response = await aio_create_rag(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            name=name,
+            description=description,
+            chunking_method=chunking_method,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            breakpoint_threshold_type=breakpoint_threshold_type,
+            buffer_size=buffer_size,
+            files=file_to_uploads,
+            **self._client_settings,
+        )
+        if response.status_code == 201 and response.json()["success"]:
+            return response.json()["data"]
+
+    @aio_retry_on_disconnect
+    async def rags(self) -> str:
+        response = await aio_rags(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
+
+    @aio_retry_on_disconnect
+    async def rag(self, rag_id: str) -> str:
+        response = await aio_rag(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            rag_id,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
+
+    @aio_retry_on_disconnect
+    async def rag_delete(self, rag_id: str) -> str:
+        response = await aio_rag_delete(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            rag_id,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()
+
+    @aio_retry_on_disconnect
+    async def rag_prompt_completion(
+        self,
+        rag_id: str,
+        model: str,
+        message: str,
+        search_type: [SearchType | str] = None,
+        k: int = None,
+        fetch_k: int = None,
+        lambda_mult: float = None,
+        score_threshold: float = None,
+    ) -> str:
+
+        if type(model) == dict and "model" in model:
+            model = model["model"]
+        elif type(model) == Model:
+            model = model.model
+
+        response = await aio_rag_prompt_completion(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            rag_id,
+            model,
+            message,
+            search_type,
+            k,
+            fetch_k,
+            lambda_mult,
+            score_threshold,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["response"]
+
+    #################################
+    # RAG object factory methods
+    ##############################
+    async def rag_object(self, rag_id):
+        data = await self.rag(rag_id=rag_id)
+        agent_obj = AsyncStraicoAgent(self, data)
+        return agent_obj
+
+    async def rag_objects(self):
+        _rags = await self.rags()
+        return [AsyncStraicoRAG(self, rag) for rag in _rags]
+
+    async def new_rag(
+        self,
+        name: str,
+        description: str,
+        *file_to_uploads: [Path | str],
+        chunking_method: [ChunkingMethod | str] = None,
+        chunk_size: int = 1000,
+        chunk_overlap: int = 50,
+        breakpoint_threshold_type: [
+            BreakpointThresholdType | str
+        ] = BreakpointThresholdType.percentile,
+        buffer_size: int = 500,
+    ) -> str:
+        _rag = await self.create_rag(
+            name,
+            description,
+            *file_to_uploads,
+            chunking_method=chunking_method,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            breakpoint_threshold_type=breakpoint_threshold_type,
+            buffer_size=buffer_size,
+        )
+        return AsyncStraicoRAG(self, _rag)
+
+    #################################
+    # Agent API
+    ##############################
+    @aio_retry_on_disconnect
+    async def create_agent(
+        self,
+        name: str,
+        description: str,
+        model: str,
+        system_prompt: str,
+        tags: [str] = [],
+        rag: [AsyncStraicoRAG | dict | str] = None,
+    ) -> str:
+
+        if type(model) == dict and "model" in model:
+            model = model["model"]
+        elif type(model) == Model:
+            model = model.model
+
+        response = await aio_create_agent(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            name=name,
+            description=description,
+            model=model,
+            system_prompt=system_prompt,
+            tags=tags,
+            **self._client_settings,
+        )
+        if response.status_code == 201 and response.json()["success"]:
+            _agent = response.json()["data"]
+            if rag is not None:
+                rag_type = type(rag)
+                if rag_type == dict and "_id" in rag:
+                    rag = rag["_id"]
+                if rag_type == AsyncStraicoRAG:
+                    rag = rag.data["_id"]
+                return await self.agent_add_rag(_agent["_id"], rag)
+            return _agent
+
+    @aio_retry_on_disconnect
+    async def agents(self, *, with_tag: str = None) -> str:
+        response = await aio_agents(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            _agents = response.json()["data"]
+            if with_tag is None:
+                return _agents
+            return [agent for agent in _agents if with_tag in agent["tag"]]
+
+    @aio_retry_on_disconnect
+    async def agent(self, agent_id: str) -> str:
+        response = await aio_agent(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            agent_id,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
+
+    @aio_retry_on_disconnect
+    async def agent_delete(self, agent_id: str) -> dict:
+        response = await aio_agent_delete(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            agent_id,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()
+
+    @aio_retry_on_disconnect
+    async def agent_add_rag(
+        self, agent_id: str, rag_id: [AsyncStraicoRAG | dict | str]
+    ) -> dict:
+        rag_type = type(rag_id)
+        if rag_type == dict and "_id" in rag_id:
+            rag_id = rag_id["_id"]
+        elif rag_type == AsyncStraicoRAG:
+            rag_id = rag_id.data["_id"]
+
+        response = await aio_add_rag_to_agent(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            agent_id,
+            rag_id,
+            **self._client_settings,
+        )
+
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
+
+    @aio_retry_on_disconnect
+    async def agent_prompt_completion(
+        self,
+        agent_id: str,
+        message: str,
+        search_type: [SearchType | str] = None,
+        k: int = None,
+        fetch_k: int = None,
+        lambda_mult: float = None,
+        score_threshold: float = None,
+    ) -> dict:
+
+        response = await aio_agent_prompt_completion(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            agent_id,
+            message,
+            search_type,
+            k,
+            fetch_k,
+            lambda_mult,
+            score_threshold,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["response"]
+
+    @aio_retry_on_disconnect
+    async def agent_update(
+        self,
+        agent_id: str,
+        rag: [AsyncStraicoRAG | dict | str] = None,
+        name: str = None,
+        description: str = None,
+        model: str = None,
+        system_prompt: str = None,
+        tags: [str] = None,
+    ) -> str:
+
+        if rag is not None:
+            rag_type = type(rag)
+            if rag_type == dict and "_id" in rag:
+                rag = rag["_id"]
+            elif rag_type == AsyncStraicoRAG:
+                rag = rag.data["_id"]
+
+        if type(model) == dict and "model" in model:
+            model = model["model"]
+
+        elif type(model) == Model:
+            model = model.model
+
+        response = await aio_agent_update(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            agent_id,
+            rag_id=rag,
+            name=name,
+            description=description,
+            model=model,
+            system_prompt=system_prompt,
+            tags=tags,
+            **self._client_settings,
+        )
+        if response.status_code == 200 and response.json()["success"]:
+            return response.json()["data"]
+
+    #################################
+    # Agent object factory methods
+    ##############################
+    async def agent_object(self, agent_id):
+        data = await self.agent(agent_id=agent_id)
+        agent_obj = AsyncStraicoAgent(self, data)
+        return agent_obj
+
+    async def agent_objects(self, *, with_tag: str = None):
+        _agents = await self.agents(with_tag=with_tag)
+        return [AsyncStraicoAgent(self, agent) for agent in _agents]
+
+    async def new_agent(
+        self,
+        name: str,
+        description: str,
+        model: str,
+        system_prompt: str,
+        tags: [str] = [],
+        rag: [AsyncStraicoRAG | dict | str] = None,
+    ) -> str:
+        _agent = await self.create_agent(
+            name=name,
+            description=description,
+            model=model,
+            system_prompt=system_prompt,
+            tags=tags,
+            rag=rag,
+        )
+        return AsyncStraicoAgent(self, _agent)
 
 
 @asynccontextmanager

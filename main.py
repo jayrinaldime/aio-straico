@@ -141,9 +141,9 @@ def main():
         user_info = client.user()
         pprint(user_info)
 
-        models = client.models()
-        # pprint(models)
-        # cheapest_chat_model = cheapest_model(models)
+        models = client.models(v=1)
+        pprint(models)
+        cheapest_chat_model = cheapest_model(models)
         # # pprint(cheapest_chat_model)
         #
         # reply =  client.prompt_completion(cheapest_chat_model, "Hello there")
@@ -151,7 +151,7 @@ def main():
         #
         #
         reply = client.prompt_completion(
-            "openai/gpt-4o-mini", "tell me a joke", temperature=2.0, max_tokens=100
+            cheapest_chat_model, "tell me a joke", temperature=2.0, max_tokens=100
         )
         print(reply["completion"]["choices"][0]["message"]["content"])
 
@@ -202,26 +202,26 @@ def main():
         #     print("Transcript:", transcript["text"])
         #     print()
 
-        youtube_url = "https://www.youtube.com/watch?v=zWPe_CUR4yU"
-
-        response = client.prompt_completion(
-            "openai/gpt-4o-mini",
-            "summarize the main points",
-            youtube_urls=youtube_url,
-            display_transcripts=True,
-        )
-        print("## Summary")
-        print(
-            response["completions"]["openai/gpt-4o-mini"]["completion"]["choices"][0][
-                "message"
-            ]["content"]
-        )
-
-        print("## Transcript")
-        for transcript in response["transcripts"]:
-            print("Name:", transcript["name"])
-            print("Transcript:", transcript["text"])
-            print()
+        # youtube_url = "https://www.youtube.com/watch?v=zWPe_CUR4yU"
+        #
+        # response = client.prompt_completion(
+        #     "openai/gpt-4o-mini",
+        #     "summarize the main points",
+        #     youtube_urls=youtube_url,
+        #     display_transcripts=True,
+        # )
+        # print("## Summary")
+        # print(
+        #     response["completions"]["openai/gpt-4o-mini"]["completion"]["choices"][0][
+        #         "message"
+        #     ]["content"]
+        # )
+        #
+        # print("## Transcript")
+        # for transcript in response["transcripts"]:
+        #     print("Name:", transcript["name"])
+        #     print("Transcript:", transcript["text"])
+        #     print()
 
 
 if __name__ == "__main__":
