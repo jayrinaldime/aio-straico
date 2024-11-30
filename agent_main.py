@@ -181,6 +181,37 @@ def main():
 
 
 
+def main_obj():
+    with straico_client() as client:
+        *_, api_rag, utils_rag, client_rag = client.rag_objects()
+        models = client.models()
+        cheapest_chat_model = cheapest_model(models)
+        agent_new = client.new_agent(
+            "AIO Straico Python Agent",
+            "An Agent that understand the code for aio-straico library",
+            cheapest_chat_model,
+            "You are helpful **Python** coding assistant for the library aio-straico. Always answer using the context provided. Please do not answer if no information is available for the user question.",
+            ["Python", "aio-straico"],
+            api_rag,
+        )
+        pprint(agent_new.data)
+
+        agent_id = "67482db25962c57393ecb1b4"
+        agent = client.agent_object(agent_id)
+        pprint(agent.data)
+        agent.update(rag=utils_rag)
+        agent.refresh()
+        pprint(agent.data)
+        r = agent.set_rag(client_rag)
+        pprint(r)
+
+        response = agent.prompt_completion(
+            "Please add comment to function `aio_straico_client`. Please also give example usage on how to use `aio_straico_client`"
+        )
+        pprint(response)
+
+        r = agent_new.delete()
+        pprint(r)
+
 if __name__ == "__main__":
-    #asyncio.run(async_main_obj())
-    main()
+    main_obj()
