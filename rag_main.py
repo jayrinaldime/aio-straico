@@ -72,5 +72,33 @@ async def async_main():
         pprint(r)
 
 
+def main():
+    with straico_client() as client:
+        # r = client.create_rag("Test1", "Test Rag",
+        #                   Path("./aio_straico/utils/models.py"),
+        #                   Path("./aio_straico/utils/models_to_enum.py"),
+        #                   Path("./aio_straico/utils/transcript_utils.py"),
+        #                   Path("./aio_straico/api/v0_rag.py"),
+        #                   )
+        # pprint(r)
+
+        r, *_ = client.rags()
+        pprint(r)
+        print(r["_id"])
+
+        rag_id = r["_id"]
+        # r = client.rag(rag_id)
+        # pprint(r)
+
+        # r = client.rag_delete(rag_id)
+        # pprint(r)
+        models = client.models()
+        cheapest_chat_model = cheapest_model(models)
+        r = client.rag_prompt_completion(
+            rag_id, cheapest_chat_model, "How to get the cheapest Model ?"
+        )
+
+        pprint(r)
+
 if __name__ == "__main__":
-    asyncio.run(async_main_obj())
+    main()
