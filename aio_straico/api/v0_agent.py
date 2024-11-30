@@ -140,6 +140,8 @@ async def aio_agent_update(
 
     response = await session.put(url, headers=headers, data=payload, **settings)
     return response
+
+
 def create_agent(
     session,
     base_url: str,
@@ -195,10 +197,7 @@ def agent(session, base_url: str, headers: dict, agent_id: str, **settings):
     return response
 
 
-def agent_delete(
-    session, base_url: str,
-    headers: dict, agent_id: str, **settings
-):
+def agent_delete(session, base_url: str, headers: dict, agent_id: str, **settings):
     url = f"{base_url}/v0/agent/{agent_id}"
     response = session.delete(url, headers=headers, **settings)
     return response

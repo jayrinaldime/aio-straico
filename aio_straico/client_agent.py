@@ -1,6 +1,7 @@
 from .api.v0_rag import SearchType
 from .client_rag import StraicoRAG
 
+
 class StraicoAgent:
     def __init__(self, client, data):
         self.client = client

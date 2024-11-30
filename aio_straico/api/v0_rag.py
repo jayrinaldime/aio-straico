@@ -177,6 +177,7 @@ async def aio_rag_prompt_completion(
 # Non Async Functions
 #########################
 
+
 def create_rag(
     session,
     base_url: str,
@@ -264,9 +265,7 @@ def rag(session, base_url: str, headers: dict, rag_id: str, **settings):
     return response
 
 
-def rag_delete(
-    session, base_url: str, headers: dict, rag_id: str, **settings
-):
+def rag_delete(session, base_url: str, headers: dict, rag_id: str, **settings):
     url = f"{base_url}/v0/rag/{rag_id}"
     response = session.delete(url, headers=headers, **settings)
     return response

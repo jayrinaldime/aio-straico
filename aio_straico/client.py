@@ -34,6 +34,9 @@ from pathlib import Path
 from .utils.models_to_enum import Model
 from .utils import is_listable_not_string
 
+from .client_agent import StraicoAgent
+from .client_rag import StraicoRAG
+
 
 def retry_on_disconnect(func):
     @wraps(func)
@@ -243,6 +246,9 @@ class StraicoClient:
         if response.status_code == 201 and response.json()["success"]:
             return response.json()["data"]["url"]
 
+    #################################
+    # Image Generation API
+    ##############################
     @retry_on_disconnect
     def image_generation(
         self, model, description: str, size: ImageSize | str, variations: int
@@ -292,9 +298,44 @@ class StraicoClient:
 
         return destination_zip_path
 
+    def image_generation_as_images(
+        self,
+        model,
+        description: str,
+        size: ImageSize | str,
+        variations: int,
+        destination_directory_path: Path | str,
+    ) -> [Path]:
+        if type(destination_directory_path) == str:
+            destination_directory_path = Path(destination_directory_path)
+
+        if not destination_directory_path.is_dir():
+            raise Exception("Destination path is not a directory")
+
+        image_details = self.image_generation(model, description, size, variations)
+
+        image_urls = image_details["images"]
+        image_paths = []
+        for image_url in image_urls:
+            response = self._session.get(image_url, **self._client_settings)
+            content = response.read()
+
+            image_name = image_url.split("/")[-1]
+            destination_image_path = destination_directory_path / image_name
+
+            with destination_image_path.open("wb") as file_writer:
+                file_writer.write(content)
+
+            image_paths.append(destination_image_path)
+
+        return image_paths
+
     def close(self):
         self._session.close()
 
+    #################################
+    # RAG API
+    ##############################
     @retry_on_disconnect
     def create_rag(
         self,
@@ -402,6 +443,46 @@ class StraicoClient:
         if response.status_code == 200 and response.json()["success"]:
             return response.json()["response"]
 
+    #################################
+    # RAG object factory methods
+    ##############################
+    def rag_object(self, rag_id):
+        data = self.rag(rag_id=rag_id)
+        agent_obj = StraicoAgent(self, data)
+        return agent_obj
+
+    def rag_objects(self):
+        _rags = self.rags()
+        return [StraicoRAG(self, rag) for rag in _rags]
+
+    def new_rag(
+        self,
+        name: str,
+        description: str,
+        *file_to_uploads: [Path | str],
+        chunking_method: [ChunkingMethod | str] = None,
+        chunk_size: int = 1000,
+        chunk_overlap: int = 50,
+        breakpoint_threshold_type: [
+            BreakpointThresholdType | str
+        ] = BreakpointThresholdType.percentile,
+        buffer_size: int = 500,
+    ) -> str:
+        _rag = self.create_rag(
+            name,
+            description,
+            *file_to_uploads,
+            chunking_method=chunking_method,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            breakpoint_threshold_type=breakpoint_threshold_type,
+            buffer_size=buffer_size,
+        )
+        return StraicoRAG(self, _rag)
+
+    #################################
+    # Agent API
+    ##############################
     @retry_on_disconnect
     def create_agent(
         self,
@@ -478,9 +559,7 @@ class StraicoClient:
             return response.json()
 
     @retry_on_disconnect
-    def agent_add_rag(
-        self, agent_id: str, rag_id: [StraicoRAG | dict | str]
-    ) -> dict:
+    def agent_add_rag(self, agent_id: str, rag_id: [StraicoRAG | dict | str]) -> dict:
         rag_type = type(rag_id)
         if rag_type == dict and "_id" in rag_id:
             rag_id = rag_id["_id"]
@@ -565,6 +644,9 @@ class StraicoClient:
         if response.status_code == 200 and response.json()["success"]:
             return response.json()["data"]
 
+    #################################
+    # Agent object factory methods
+    ##############################
     def agent_object(self, agent_id):
         data = self.agent(agent_id=agent_id)
         agent_obj = StraicoAgent(self, data)
@@ -592,69 +674,6 @@ class StraicoClient:
             rag=rag,
         )
         return StraicoAgent(self, _agent)
-        self,
-        rag_id: str,
-        model: str,
-        message: str,
-        search_type: [SearchType | str] = None,
-        k: int = None,
-        fetch_k: int = None,
-        lambda_mult: float = None,
-        score_threshold: float = None,
-    ) -> str:
-        if type(model) == dict and "model" in model:
-            model = model["model"]
-        elif type(model) == Model:
-            model = model.model
-
-        response = api_rag_prompt_completion(
-            self._session,
-            self.BASE_URL,
-            self._header,
-            rag_id,
-            model,
-            message,
-            search_type,
-            k,
-            fetch_k,
-            lambda_mult,
-            score_threshold,
-            **self._client_settings,
-        )
-        if response.status_code == 200 and response.json()["success"]:
-            return response.json()["response"]
-
-    def image_generation_as_images(
-        self,
-        model,
-        description: str,
-        size: ImageSize | str,
-        variations: int,
-        destination_directory_path: Path | str,
-    ) -> [Path]:
-        if type(destination_directory_path) == str:
-            destination_directory_path = Path(destination_directory_path)
-
-        if not destination_directory_path.is_dir():
-            raise Exception("Destination path is not a directory")
-
-        image_details = self.image_generation(model, description, size, variations)
-
-        image_urls = image_details["images"]
-        image_paths = []
-        for image_url in image_urls:
-            response = self._session.get(image_url, **self._client_settings)
-            content = response.read()
-
-            image_name = image_url.split("/")[-1]
-            destination_image_path = destination_directory_path / image_name
-
-            with destination_image_path.open("wb") as file_writer:
-                file_writer.write(content)
-
-            image_paths.append(destination_image_path)
-
-        return image_paths
 
 
 @contextmanager
