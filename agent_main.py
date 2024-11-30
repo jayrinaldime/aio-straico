@@ -196,7 +196,7 @@ def main_obj():
         )
         pprint(agent_new.data)
 
-        agent_id = "67482db25962c57393ecb1b4"
+        agent_id = agent_new.agent_id
         agent = client.agent_object(agent_id)
         pprint(agent.data)
         agent.update(rag=utils_rag)
