@@ -108,6 +108,156 @@ What can I do for you today? 😊
 ### Example Async Code 
 
 While the code below is async code, it can also be executed in a non-async mode by removing "await" and using the code with `straico_client` as shown in the "Basic Prompt Completion" section.
+
+### RAG (Retrieval Augmented Generation)
+
+#### Creating a RAG
+
+##### Async Example
+```python
+from aio_straico import aio_straico_client
+from pathlib import Path
+
+async def main():
+    async with aio_straico_client() as client:
+        # Create a RAG by providing a name, description, and files to index
+        rag = await client.create_rag(
+            "My Code RAG", 
+            "RAG for my project files",
+            Path("./my_project/utils.py"),
+            Path("./my_project/main.py")
+        )
+        print(rag)  # Print RAG details
+
+        # Alternatively, create a new RAG object
+        rag_obj = await client.new_rag(
+            "My Code RAG", 
+            "RAG for my project files",
+            Path("./my_project/utils.py"),
+            Path("./my_project/main.py")
+        )
+        print(rag_obj.data)
+```
+
+##### Synchronous Example
+```python
+from aio_straico import straico_client
+from pathlib import Path
+
+def main():
+    with straico_client() as client:
+        # Create a RAG by providing a name, description, and files to index
+        rag = client.create_rag(
+            "My Code RAG", 
+            "RAG for my project files",
+            Path("./my_project/utils.py"),
+            Path("./my_project/main.py")
+        )
+        print(rag)  # Print RAG details
+
+        # Alternatively, create a new RAG object
+        rag_obj = client.new_rag(
+            "My Code RAG", 
+            "RAG for my project files",
+            Path("./my_project/utils.py"),
+            Path("./my_project/main.py")
+        )
+        print(rag_obj.data)
+```
+
+#### Deleting a RAG
+
+##### Async Example
+```python
+async def delete_rag():
+    async with aio_straico_client() as client:
+        # Get existing RAGs
+        rags = await client.rags()
+        rag_id = rags[0]['_id']  # Get ID of first RAG
+
+        # Delete RAG by ID
+        await client.rag_delete(rag_id)
+
+        # Or delete RAG object directly
+        rag_obj = await client.rag(rag_id)
+        await rag_obj.delete()
+```
+
+##### Synchronous Example
+```python
+def delete_rag():
+    with straico_client() as client:
+        # Get existing RAGs
+        rags = client.rags()
+        rag_id = rags[0]['_id']  # Get ID of first RAG
+
+        # Delete RAG by ID
+        client.rag_delete(rag_id)
+
+        # Or delete RAG object directly
+        rag_obj = client.rag(rag_id)
+        rag_obj.delete()
+```
+
+#### RAG Prompt Completion
+
+##### Async Example
+```python
+async def rag_prompt():
+    async with aio_straico_client() as client:
+        # Get existing RAGs
+        rags = await client.rags()
+        rag_id = rags[0]['_id']  # Get ID of first RAG
+
+        # Get available models
+        models = await client.models()
+        cheapest_model = cheapest_model(models)
+
+        # Perform RAG prompt completion
+        response = await client.rag_prompt_completion(
+            rag_id, 
+            cheapest_model, 
+            "Explain the main functionality of my project"
+        )
+        print(response)
+
+        # Alternatively, with RAG object
+        rag_obj = await client.rag(rag_id)
+        response = await rag_obj.prompt_completion(
+            cheapest_model, 
+            "Explain the main functionality of my project"
+        )
+        print(response)
+```
+
+##### Synchronous Example
+```python
+def rag_prompt():
+    with straico_client() as client:
+        # Get existing RAGs
+        rags = client.rags()
+        rag_id = rags[0]['_id']  # Get ID of first RAG
+
+        # Get available models
+        models = client.models()
+        cheapest_model = cheapest_model(models)
+
+        # Perform RAG prompt completion
+        response = client.rag_prompt_completion(
+            rag_id, 
+            cheapest_model, 
+            "Explain the main functionality of my project"
+        )
+        print(response)
+
+        # Alternatively, with RAG object
+        rag_obj = client.rag(rag_id)
+        response = rag_obj.prompt_completion(
+            cheapest_model, 
+            "Explain the main functionality of my project"
+        )
+        print(response)
+```
 #### Add file attachment and Transcript
 ```python
 mp3_files = [*Path("test_data/audio/").glob("*.mp3")]
