@@ -109,6 +109,102 @@ What can I do for you today? 😊
 
 While the code below is async code, it can also be executed in a non-async mode by removing "await" and using the code with `straico_client` as shown in the "Basic Prompt Completion" section.
 
+#### Add file attachment and Transcript
+```python
+mp3_files = [*Path("test_data/audio/").glob("*.mp3")]
+response = await client.prompt_completion(
+    "openai/gpt-4o-mini",
+    "summarize the main points",
+    files=mp3_files,
+    display_transcripts=True,
+)
+
+print("## Summary")
+print(
+    response["completions"]["openai/gpt-4o-mini"]["completion"]["choices"][0][
+        "message"
+    ]["content"]
+)
+
+print("## Transcript")
+for transcript in response["transcripts"]:
+    print("Name:", transcript["name"])
+    print("Transcript:", transcript["text"])
+    print()
+
+"""
+## Summary 
+The . . .
+
+## Transcript
+Name:  . . .
+Transcript: . . .
+"""
+```
+
+#### Add Youtube URL and Transcript
+```python
+youtube_url = "https://www.youtube.com/watch?v=zWPe_CUR4yU"
+
+response = await client.prompt_completion(
+    "openai/gpt-4o-mini",
+    "summarize the main points",
+    youtube_urls=youtube_url,
+    display_transcripts=True,
+)
+
+print("## Summary")
+print(
+    response["completions"]["openai/gpt-4o-mini"]["completion"]["choices"][0][
+        "message"
+    ]["content"]
+)
+
+print("## Transcript")
+for transcript in response["transcripts"]:
+    print("Name:", transcript["name"])
+    print("Transcript:", youtube_trasncript_to_plain_text(transcript["text"]))
+    print()
+
+"""
+## Summary 
+The . . .
+
+## Transcript
+Name:  . . .
+Transcript: . . .
+"""
+```
+
+### Image Generation 
+
+#### Generate images and download zip file to local directory 
+```python
+model ="openai/dall-e-3"
+directory = Path(".")
+zip_file_path = await client.image_generation_as_zipfile(
+    model=model,
+    description="A cute cat",
+    size=ImageSize.square,
+    variations=4,
+    destination_zip_path=directory,
+)
+```
+
+#### Generate images and download image files to local directory 
+```python
+model ="openai/dall-e-3"
+directory = Path(".")
+image_paths = await client.image_generation_as_images(
+    model=model,
+    description="A cute cat",
+    size=ImageSize.landscape,
+    variations=4,
+    destination_zip_path=directory,
+)
+```
+
+
 ### RAG (Retrieval Augmented Generation)
 
 #### Creating a RAG
@@ -258,100 +354,246 @@ def rag_prompt():
         )
         print(response)
 ```
-#### Add file attachment and Transcript
+
+
+### Agents
+
+#### Creating an Agent
+
+##### Async Example
 ```python
-mp3_files = [*Path("test_data/audio/").glob("*.mp3")]
-response = await client.prompt_completion(
-    "openai/gpt-4o-mini",
-    "summarize the main points",
-    files=mp3_files,
-    display_transcripts=True,
-)
+from aio_straico import aio_straico_client
+from aio_straico.utils import cheapest_model
 
-print("## Summary")
-print(
-    response["completions"]["openai/gpt-4o-mini"]["completion"]["choices"][0][
-        "message"
-    ]["content"]
-)
+async def create_agent():
+    async with aio_straico_client() as client:
+        # Get available models
+        models = await client.models()
+        cheapest_chat_model = cheapest_model(models)
 
-print("## Transcript")
-for transcript in response["transcripts"]:
-    print("Name:", transcript["name"])
-    print("Transcript:", transcript["text"])
-    print()
+        # Create a new agent
+        agent = await client.create_agent(
+            "My Project Agent", 
+            "An agent to help with my project",
+            cheapest_chat_model,
+            "You are a helpful assistant for my project.",
+            ["Python", "Project"]
+        )
+        print(agent)  # Print agent details
 
-"""
-## Summary 
-The . . .
-
-## Transcript
-Name:  . . .
-Transcript: . . .
-"""
+        # Alternatively, create a new agent object
+        agent_obj = await client.new_agent(
+            "My Project Agent", 
+            "An agent to help with my project",
+            cheapest_chat_model,
+            "You are a helpful assistant for my project.",
+            ["Python", "Project"]
+        )
+        print(agent_obj.data)
 ```
 
-#### Add Youtube URL and Transcript
+##### Synchronous Example
 ```python
-youtube_url = "https://www.youtube.com/watch?v=zWPe_CUR4yU"
+from aio_straico import straico_client
+from aio_straico.utils import cheapest_model
 
-response = await client.prompt_completion(
-    "openai/gpt-4o-mini",
-    "summarize the main points",
-    youtube_urls=youtube_url,
-    display_transcripts=True,
-)
+def create_agent():
+    with straico_client() as client:
+        # Get available models
+        models = client.models()
+        cheapest_chat_model = cheapest_model(models)
 
-print("## Summary")
-print(
-    response["completions"]["openai/gpt-4o-mini"]["completion"]["choices"][0][
-        "message"
-    ]["content"]
-)
+        # Create a new agent
+        agent = client.create_agent(
+            "My Project Agent", 
+            "An agent to help with my project",
+            cheapest_chat_model,
+            "You are a helpful assistant for my project.",
+            ["Python", "Project"]
+        )
+        print(agent)  # Print agent details
 
-print("## Transcript")
-for transcript in response["transcripts"]:
-    print("Name:", transcript["name"])
-    print("Transcript:", youtube_trasncript_to_plain_text(transcript["text"]))
-    print()
-
-"""
-## Summary 
-The . . .
-
-## Transcript
-Name:  . . .
-Transcript: . . .
-"""
+        # Alternatively, create a new agent object
+        agent_obj = client.new_agent(
+            "My Project Agent", 
+            "An agent to help with my project",
+            cheapest_chat_model,
+            "You are a helpful assistant for my project.",
+            ["Python", "Project"]
+        )
+        print(agent_obj.data)
 ```
 
+#### Adding a RAG to an Agent
 
-### Image Generation 
-
-#### Generate images and download zip file to local directory 
+##### Async Example
 ```python
-model ="openai/dall-e-3"
-directory = Path(".")
-zip_file_path = await client.image_generation_as_zipfile(
-    model=model,
-    description="A cute cat",
-    size=ImageSize.square,
-    variations=4,
-    destination_zip_path=directory,
-)
+async def add_rag_to_agent():
+    async with aio_straico_client() as client:
+        # Get existing RAGs and Agents
+        rags = await client.rags()
+        rag_id = rags[0]['_id']  # Get ID of first RAG
+
+        agents = await client.agents()
+        agent_id = agents[0]['_id']  # Get ID of first agent
+
+        # Add RAG to agent by ID
+        await client.agent_add_rag(agent_id, rag_id)
+
+        # Or add RAG to agent object directly
+        agent_obj = await client.agent(agent_id)
+        await agent_obj.update(rag=rag_id)
 ```
 
-#### Generate images and download image files to local directory 
+##### Synchronous Example
 ```python
-model ="openai/dall-e-3"
-directory = Path(".")
-image_paths = await client.image_generation_as_images(
-    model=model,
-    description="A cute cat",
-    size=ImageSize.landscape,
-    variations=4,
-    destination_zip_path=directory,
-)
+def add_rag_to_agent():
+    with straico_client() as client:
+        # Get existing RAGs and Agents
+        rags = client.rags()
+        rag_id = rags[0]['_id']  # Get ID of first RAG
+
+        agents = client.agents()
+        agent_id = agents[0]['_id']  # Get ID of first agent
+
+        # Add RAG to agent by ID
+        client.agent_add_rag(agent_id, rag_id)
+
+        # Or add RAG to agent object directly
+        agent_obj = client.agent(agent_id)
+        agent_obj.update(rag=rag_id)
 ```
 
+#### Updating an Agent
 
+##### Async Example
+```python
+async def update_agent():
+    async with aio_straico_client() as client:
+        # Get an existing agent
+        agents = await client.agents()
+        agent_id = agents[0]['_id']
+
+        # Update agent details
+        await client.agent_update(
+            agent_id, 
+            name="Updated Agent Name",
+            description="Updated description",
+            system_prompt="You are an updated helpful assistant."
+        )
+
+        # Or update agent object directly
+        agent_obj = await client.agent(agent_id)
+        await agent_obj.update(
+            name="Updated Agent Name",
+            description="Updated description",
+            system_prompt="You are an updated helpful assistant."
+        )
+```
+
+##### Synchronous Example
+```python
+def update_agent():
+    with straico_client() as client:
+        # Get an existing agent
+        agents = client.agents()
+        agent_id = agents[0]['_id']
+
+        # Update agent details
+        client.agent_update(
+            agent_id, 
+            name="Updated Agent Name",
+            description="Updated description",
+            system_prompt="You are an updated helpful assistant."
+        )
+
+        # Or update agent object directly
+        agent_obj = client.agent(agent_id)
+        agent_obj.update(
+            name="Updated Agent Name",
+            description="Updated description",
+            system_prompt="You are an updated helpful assistant."
+        )
+```
+
+#### Agent Prompt Completion
+
+##### Async Example
+```python
+async def agent_prompt():
+    async with aio_straico_client() as client:
+        # Get existing agents
+        agents = await client.agents()
+        agent_id = agents[0]['_id']  # Get ID of first agent
+
+        # Perform agent prompt completion
+        response = await client.agent_prompt_completion(
+            agent_id, 
+            "Explain the main functionality of my project"
+        )
+        print(response)
+
+        # Alternatively, with agent object
+        agent_obj = await client.agent(agent_id)
+        response = await agent_obj.prompt_completion(
+            "Explain the main functionality of my project"
+        )
+        print(response)
+```
+
+##### Synchronous Example
+```python
+def agent_prompt():
+    with straico_client() as client:
+        # Get existing agents
+        agents = client.agents()
+        agent_id = agents[0]['_id']  # Get ID of first agent
+
+        # Perform agent prompt completion
+        response = client.agent_prompt_completion(
+            agent_id, 
+            "Explain the main functionality of my project"
+        )
+        print(response)
+
+        # Alternatively, with agent object
+        agent_obj = client.agent(agent_id)
+        response = agent_obj.prompt_completion(
+            "Explain the main functionality of my project"
+        )
+        print(response)
+```
+
+#### Deleting an Agent
+
+##### Async Example
+```python
+async def delete_agent():
+    async with aio_straico_client() as client:
+        # Get existing agents
+        agents = await client.agents()
+        agent_id = agents[0]['_id']  # Get ID of first agent
+
+        # Delete agent by ID
+        await client.agent_delete(agent_id)
+
+        # Or delete agent object directly
+        agent_obj = await client.agent(agent_id)
+        await agent_obj.delete()
+```
+
+##### Synchronous Example
+```python
+def delete_agent():
+    with straico_client() as client:
+        # Get existing agents
+        agents = client.agents()
+        agent_id = agents[0]['_id']  # Get ID of first agent
+
+        # Delete agent by ID
+        client.agent_delete(agent_id)
+
+        # Or delete agent object directly
+        agent_obj = client.agent(agent_id)
+        agent_obj.delete()
+```
