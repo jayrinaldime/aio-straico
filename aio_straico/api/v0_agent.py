@@ -90,7 +90,7 @@ async def aio_agent_prompt_completion(
 
     if search_type is not None:
         search_type = SearchType(search_type)
-        payload["search_type"] = search_type
+        payload["search_type"] = search_type.value
 
     if k is not None:
         payload["k"] = k
@@ -226,7 +226,7 @@ def agent_prompt_completion(
 
     if search_type is not None:
         search_type = SearchType(search_type)
-        payload["search_type"] = search_type
+        payload["search_type"] = search_type.value
 
     if k is not None:
         payload["k"] = k
