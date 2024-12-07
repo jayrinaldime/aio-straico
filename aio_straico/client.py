@@ -217,6 +217,26 @@ class StraicoClient:
             "htm": "text/html",
             "csv": "text/csv",
             "json": "application/json",
+            # "png": "image/png",
+            # "jpg": "image/jpeg",
+            # "jpeg": "image/jpeg",
+            # "gif": "image/gif",
+            # "bmp": "image/bmp",
+            # "webp": "image/webp",
+            # "tiff": "image/tiff",
+            # "tif": "image/tiff",
+            # "svg": "image/svg+xml",
+            # "ico": "image/x-icon",
+            # "heic": "image/heic",
+            # "heif": "image/heif",
+            # "raw": "image/x-raw",
+            # "cr2": "image/x-canon-cr2",
+            # "nef": "image/x-nikon-nef",
+            # "arw": "image/x-sony-arw",
+            # "psd": "image/vnd.adobe.photoshop",
+            # "ai": "application/illustrator",
+            # "eps": "application/postscript",
+            # "jp2": "image/jp2",
         }
         if not file_to_upload.exists():
             raise Exception(f"Cannot find file {file_to_upload}")
@@ -230,8 +250,12 @@ class StraicoClient:
         file_extension = file_to_upload.name.split(".")[-1].strip().lower()
 
         content_type = content_type_mapping.get(
-            file_extension, "application/octet-stream"
+            file_extension
         )
+
+        if content_type is None:
+            raise Exception("Unsupported File Type")
+
         response = file_upload(
             self._session,
             self.BASE_URL,
@@ -241,6 +265,7 @@ class StraicoClient:
             binary_data=content,
             **self._client_settings,
         )
+
         if response.status_code == 201 and response.json()["success"]:
             return response.json()["data"]["url"]
 

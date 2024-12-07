@@ -57,8 +57,6 @@ async def async_main():
         )
         print(reply["completion"]["choices"][0]["message"]["content"])
         # await asyncio.sleep(60)
-        reply = await client.prompt_completion("openai/gpt-4o-mini", "Hello there")
-        print(reply["completion"]["choices"][0]["message"]["content"])
 
         # model = models_v1["image"][0]
         # directory = Path(".")
@@ -224,6 +222,19 @@ def main():
         #     print()
 
 
+def upload_image():
+    img = Path("./test_image.png")
+    with straico_client() as client:
+        reply = client.prompt_completion(
+            "openai/gpt-4o-mini",
+            "describe the image",
+            temperature=2.0,
+            max_tokens=100,
+            files=[img],
+        )
+        pprint(reply)
+
+
 if __name__ == "__main__":
     # asyncio.run(async_main())
-    main()
+    upload_image()
