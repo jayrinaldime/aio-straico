@@ -214,9 +214,18 @@ class StraicoClient:
             "txt": "text/plain",
             "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             "html": "text/html",
-            "htm": "text/html",
+            # "htm": "text/html",
             "csv": "text/csv",
             "json": "application/json",
+            "py": "text/x-python",
+            "php": "application/x-httpd-php",
+            "js": "application/javascript",
+            "css": "text/css",
+            "cs": "text/x-csharp",
+            "swift": "text/x-swift",
+            "kt": "text/x-kotlin",
+            "xml": "application/xml",
+            "ts": "application/typescript",
             # "png": "image/png",
             # "jpg": "image/jpeg",
             # "jpeg": "image/jpeg",
@@ -249,9 +258,7 @@ class StraicoClient:
 
         file_extension = file_to_upload.name.split(".")[-1].strip().lower()
 
-        content_type = content_type_mapping.get(
-            file_extension
-        )
+        content_type = content_type_mapping.get(file_extension)
 
         if content_type is None:
             raise Exception("Unsupported File Type")
