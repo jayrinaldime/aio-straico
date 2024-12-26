@@ -1,5 +1,6 @@
 from enum import Enum
 from pathlib import Path
+from typing import List
 
 valid_file_types = ("pdf", "docx", "csv", "txt", "xlsx", "py")
 
@@ -8,9 +9,11 @@ class ChunkingMethod(Enum):
     fixed_size = "fixed_size"
     # chunk_size = 1000
     # chunk_overlap = 50
+    # separator = "\n" only single value is accepted
     recursive = "recursive"
     # chunk_size = 1000
     # chunk_overlap = 50
+    # separator = ["\n\n", "\n", " ", ""] multiple values are accepted
     markdown = "markdown"
     # chunk_size = 1000
     # chunk_overlap = 50
@@ -49,6 +52,7 @@ async def aio_create_rag(
         BreakpointThresholdType | str
     ] = BreakpointThresholdType.percentile,
     buffer_size: int = 500,
+    separator: [List[str] | str] = None,
     **settings,
 ):
     url = f"{base_url}/v0/rag"
@@ -57,9 +61,6 @@ async def aio_create_rag(
         settings["timeout"] = 600
 
     filepaths = [file if isinstance(file, Path) else Path(file) for file in files]
-    if not all((file.exists() for file in filepaths)):
-        pass
-
     files_parameter = []
 
     for index, file in enumerate(filepaths):
@@ -82,27 +83,44 @@ async def aio_create_rag(
             )
 
     payload = {"name": name, "description": description}
+    if chunking_method is None:
+        chunking_method = ChunkingMethod.fixed_size
 
-    if chunking_method is not None:
-        try:
-            chunking_method = ChunkingMethod(chunking_method)
-        except:
-            raise Exception(f"Unexpected Chunking Method value {chunking_method}")
+    try:
+        chunking_method = ChunkingMethod(chunking_method)
+    except:
+        raise Exception(f"Unexpected Chunking Method value {chunking_method}")
 
-        if chunking_method in (
-            ChunkingMethod.fixed_size,
-            ChunkingMethod.recursive,
-            ChunkingMethod.markdown,
-            ChunkingMethod.python,
-        ):
-            payload["chunk_size"] = chunk_size
-            payload["chunk_overlap"] = chunk_overlap
+    if chunking_method == ChunkingMethod.fixed_size and separator is not None:
+        if isinstance(separator, str):
+            payload["separator"] = separator
+        else:
+            raise Exception(
+                "Invalid value for separator. For Chunking method fixed size, only string is valid."
+            )
 
-        elif chunking_method == ChunkingMethod.semantic:
-            payload["breakpoint_threshold_type"] = breakpoint_threshold_type
-            payload["buffer_size"] = buffer_size
+    if chunking_method == ChunkingMethod.recursive and separator is not None:
+        if isinstance(separator, list) or isinstance(separator, tuple):
+            payload["separators"] = separator
+        else:
+            raise Exception(
+                "Invalid value for separator. For Chunking method recursive, only list type is valid."
+            )
 
-        payload["chunking_method"] = chunking_method.value
+    if chunking_method in (
+        ChunkingMethod.fixed_size,
+        ChunkingMethod.recursive,
+        ChunkingMethod.markdown,
+        ChunkingMethod.python,
+    ):
+        payload["chunk_size"] = chunk_size
+        payload["chunk_overlap"] = chunk_overlap
+
+    elif chunking_method == ChunkingMethod.semantic:
+        payload["breakpoint_threshold_type"] = breakpoint_threshold_type
+        payload["buffer_size"] = buffer_size
+
+    payload["chunking_method"] = chunking_method.value
 
     response = await session.post(
         url, headers=headers, files=files_parameter, data=payload, **settings
@@ -192,6 +210,7 @@ def create_rag(
         BreakpointThresholdType | str
     ] = BreakpointThresholdType.percentile,
     buffer_size: int = 500,
+    separator: [List[str] | str] = None,
     **settings,
 ):
     url = f"{base_url}/v0/rag"
@@ -226,26 +245,44 @@ def create_rag(
 
     payload = {"name": name, "description": description}
 
-    if chunking_method is not None:
-        try:
-            chunking_method = ChunkingMethod(chunking_method)
-        except:
-            raise Exception(f"Unexpected Chunking Method value {chunking_method}")
+    if chunking_method is None:
+        chunking_method = ChunkingMethod.fixed_size
 
-        if chunking_method in (
-            ChunkingMethod.fixed_size,
-            ChunkingMethod.recursive,
-            ChunkingMethod.markdown,
-            ChunkingMethod.python,
-        ):
-            payload["chunk_size"] = chunk_size
-            payload["chunk_overlap"] = chunk_overlap
+    try:
+        chunking_method = ChunkingMethod(chunking_method)
+    except:
+        raise Exception(f"Unexpected Chunking Method value {chunking_method}")
 
-        elif chunking_method == ChunkingMethod.semantic:
-            payload["breakpoint_threshold_type"] = breakpoint_threshold_type
-            payload["buffer_size"] = buffer_size
+    if chunking_method == ChunkingMethod.fixed_size and separator is not None:
+        if isinstance(separator, str):
+            payload["separator"] = separator
+        else:
+            raise Exception(
+                "Invalid value for separator. For Chunking method fixed size, only string is valid."
+            )
 
-        payload["chunking_method"] = chunking_method.value
+    if chunking_method == ChunkingMethod.recursive and separator is not None:
+        if isinstance(separator, list) or isinstance(separator, tuple):
+            payload["separators"] = separator
+        else:
+            raise Exception(
+                "Invalid value for separator. For Chunking method recursive, only list type is valid."
+            )
+
+    if chunking_method in (
+        ChunkingMethod.fixed_size,
+        ChunkingMethod.recursive,
+        ChunkingMethod.markdown,
+        ChunkingMethod.python,
+    ):
+        payload["chunk_size"] = chunk_size
+        payload["chunk_overlap"] = chunk_overlap
+
+    elif chunking_method == ChunkingMethod.semantic:
+        payload["breakpoint_threshold_type"] = breakpoint_threshold_type
+        payload["buffer_size"] = buffer_size
+
+    payload["chunking_method"] = chunking_method.value
 
     response = session.post(
         url, headers=headers, files=files_parameter, data=payload, **settings
