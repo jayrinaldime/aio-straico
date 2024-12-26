@@ -1,6 +1,7 @@
 from os import environ
 from contextlib import contextmanager
 from functools import wraps
+from typing import List
 from httpx import Client
 from .api.v0 import user
 from .api.v0_agent import (
@@ -379,6 +380,7 @@ class StraicoClient:
             BreakpointThresholdType | str
         ] = BreakpointThresholdType.percentile,
         buffer_size: int = 500,
+        separator: [List[str] | str] = None,
     ) -> str:
         if len(file_to_uploads) > 4:
             raise Exception(
@@ -398,6 +400,7 @@ class StraicoClient:
             chunk_overlap=chunk_overlap,
             breakpoint_threshold_type=breakpoint_threshold_type,
             buffer_size=buffer_size,
+            separator=separator,
             files=file_to_uploads,
             **self._client_settings,
         )
@@ -497,6 +500,7 @@ class StraicoClient:
             BreakpointThresholdType | str
         ] = BreakpointThresholdType.percentile,
         buffer_size: int = 500,
+        separator: [List[str] | str] = None,
     ) -> str:
         _rag = self.create_rag(
             name,
@@ -507,6 +511,7 @@ class StraicoClient:
             chunk_overlap=chunk_overlap,
             breakpoint_threshold_type=breakpoint_threshold_type,
             buffer_size=buffer_size,
+            separator=separator,
         )
         return StraicoRAG(self, _rag)
 

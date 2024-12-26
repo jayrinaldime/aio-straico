@@ -1,17 +1,6 @@
 import pytest
-import tempfile
-from contextlib import contextmanager
-from pathlib import Path
+from .utils import make_temp_file
 from aio_straico import straico_client, aio_straico_client
-
-
-@contextmanager
-def make_temp_file(filename, content):
-    with tempfile.TemporaryDirectory() as temp_directory:
-        temp_file = Path(temp_directory) / filename
-        with temp_file.open("w", encoding="utf-8") as writer:
-            writer.write(content)
-        yield temp_file
 
 
 @pytest.mark.parametrize(

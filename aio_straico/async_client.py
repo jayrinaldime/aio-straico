@@ -1,6 +1,7 @@
 from os import environ
 from contextlib import asynccontextmanager
 from functools import wraps
+from typing import List
 from httpx import AsyncClient
 from .api.v0 import aio_user
 from .api.v0 import aio_models as aio_model0
@@ -360,6 +361,7 @@ class AsyncStraicoClient:
             BreakpointThresholdType | str
         ] = BreakpointThresholdType.percentile,
         buffer_size: int = 500,
+        separator: [List[str] | str] = None,
     ) -> str:
 
         if len(file_to_uploads) > 4:
@@ -380,6 +382,7 @@ class AsyncStraicoClient:
             chunk_overlap=chunk_overlap,
             breakpoint_threshold_type=breakpoint_threshold_type,
             buffer_size=buffer_size,
+            separator=separator,
             files=file_to_uploads,
             **self._client_settings,
         )
@@ -480,6 +483,7 @@ class AsyncStraicoClient:
             BreakpointThresholdType | str
         ] = BreakpointThresholdType.percentile,
         buffer_size: int = 500,
+        separator: [List[str] | str] = None,
     ) -> str:
         _rag = await self.create_rag(
             name,
@@ -490,6 +494,7 @@ class AsyncStraicoClient:
             chunk_overlap=chunk_overlap,
             breakpoint_threshold_type=breakpoint_threshold_type,
             buffer_size=buffer_size,
+            separator=separator,
         )
         return AsyncStraicoRAG(self, _rag)
 
