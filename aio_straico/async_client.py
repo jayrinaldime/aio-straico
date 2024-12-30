@@ -144,6 +144,17 @@ class AsyncStraicoClient:
                     f"Too many youtube_urls files. API is limited to 4 Youtube URL attachments"
                 )
             v = 1
+        if isinstance(model, tuple) or isinstance(model, list):
+            v = 1
+            new_model = []
+            for m in model:
+                if isinstance(m, dict) and "model" in m:
+                    new_model.append(m["model"])
+                elif isinstance(m, Model):
+                    new_model.append(m.model)
+                else:
+                    new_model.append(m)
+            model = new_model
         else:
             v = 0
 
@@ -464,7 +475,7 @@ class AsyncStraicoClient:
     ##############################
     async def rag_object(self, rag_id):
         data = await self.rag(rag_id=rag_id)
-        agent_obj = AsyncStraicoAgent(self, data)
+        agent_obj = AsyncStraicoRAG(self, data)
         return agent_obj
 
     async def rag_objects(self):

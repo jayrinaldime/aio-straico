@@ -2,8 +2,10 @@ from enum import Enum
 from pathlib import Path
 
 from .v0_rag import SearchType
+from langfuse.decorators import observe, langfuse_context
 
 
+@observe
 async def aio_create_agent(
     session,
     base_url: str,
@@ -29,6 +31,7 @@ async def aio_create_agent(
     return response
 
 
+@observe
 async def aio_add_rag_to_agent(
     session,
     base_url: str,
@@ -47,18 +50,21 @@ async def aio_add_rag_to_agent(
     return response
 
 
+@observe
 async def aio_agents(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/agent"
     response = await session.get(url, headers=headers, **settings)
     return response
 
 
+@observe
 async def aio_agent(session, base_url: str, headers: dict, agent_id: str, **settings):
     url = f"{base_url}/v0/agent/{agent_id}"
     response = await session.get(url, headers=headers, **settings)
     return response
 
 
+@observe
 async def aio_agent_delete(
     session, base_url: str, headers: dict, agent_id: str, **settings
 ):
@@ -67,6 +73,7 @@ async def aio_agent_delete(
     return response
 
 
+@observe(as_type="generation")
 async def aio_agent_prompt_completion(
     session,
     base_url: str,
@@ -108,6 +115,7 @@ async def aio_agent_prompt_completion(
     return response
 
 
+@observe
 async def aio_agent_update(
     session,
     base_url: str,
@@ -142,6 +150,7 @@ async def aio_agent_update(
     return response
 
 
+@observe
 def create_agent(
     session,
     base_url: str,
@@ -167,6 +176,7 @@ def create_agent(
     return response
 
 
+@observe
 def add_rag_to_agent(
     session,
     base_url: str,
@@ -185,24 +195,28 @@ def add_rag_to_agent(
     return response
 
 
+@observe
 def agents(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/agent"
     response = session.get(url, headers=headers, **settings)
     return response
 
 
+@observe
 def agent(session, base_url: str, headers: dict, agent_id: str, **settings):
     url = f"{base_url}/v0/agent/{agent_id}"
     response = session.get(url, headers=headers, **settings)
     return response
 
 
+@observe
 def agent_delete(session, base_url: str, headers: dict, agent_id: str, **settings):
     url = f"{base_url}/v0/agent/{agent_id}"
     response = session.delete(url, headers=headers, **settings)
     return response
 
 
+@observe(as_type="generation")
 def agent_prompt_completion(
     session,
     base_url: str,
@@ -244,6 +258,7 @@ def agent_prompt_completion(
     return response
 
 
+@observe
 def agent_update(
     session,
     base_url: str,

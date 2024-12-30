@@ -1,30 +1,36 @@
 from enum import Enum
+from langfuse.decorators import observe, langfuse_context
 
 
+@observe
 async def aio_user(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/user"
     response = await session.get(url, headers=headers, **settings)
     return response
 
 
+@observe
 def user(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/user"
     response = session.get(url, headers=headers, **settings)
     return response
 
 
+@observe
 async def aio_models(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/models"
     response = await session.get(url, headers=headers, **settings)
     return response
 
 
+@observe
 def models(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/models"
     response = session.get(url, headers=headers, **settings)
     return response
 
 
+@observe(as_type="generation")
 async def aio_prompt_completion(
     session,
     base_url: str,
@@ -37,6 +43,7 @@ async def aio_prompt_completion(
 ):
     url = f"{base_url}/v0/prompt/completion"
     json_body = {"model": model, "message": message}
+    tracing = {}
 
     if "timeout" not in settings:
         settings["timeout"] = 60
@@ -44,16 +51,46 @@ async def aio_prompt_completion(
     if temperature is not None:
         temperature = max(min(temperature, 2), 0)
         json_body["temperature"] = temperature
+        tracing["temperature"] = temperature
 
     if max_tokens is not None:
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
+            tracing["max_tokens"] = max_tokens
+    tracing.update(settings)
 
+    langfuse_context.update_current_observation(
+        input=message, model=model, model_parameters=tracing
+    )
     response = await session.post(url, headers=headers, json=json_body, **settings)
+    if response.status_code == 201 and response.json()["success"]:
+        json_data = response.json()
+        meta = dict(json_data["data"]["completion"])
+        del meta["choices"]
+        langfuse_context.update_current_observation(
+            output=json_data["data"]["completion"]["choices"],
+            usage_details={
+                "input": json_data["data"]["words"]["input"],
+                "output": json_data["data"]["words"]["output"],
+                "total": json_data["data"]["words"]["total"],
+                "input_cost": json_data["data"]["price"]["input"],
+                "output_cost": json_data["data"]["price"]["output"],
+                "total_cost": json_data["data"]["price"]["total"],
+            },
+            metadata=meta,
+            status_message=str(response.status_code),
+        )
+
+    else:
+        langfuse_context.update_current_observation(
+            output=response.text, status_message=str(response.status_code)
+        )
+
     return response
 
 
+@observe(as_type="generation")
 def prompt_completion(
     session,
     base_url: str,
@@ -66,23 +103,50 @@ def prompt_completion(
 ):
     url = f"{base_url}/v0/prompt/completion"
     json_body = {"model": model, "message": message}
-
+    tracing = {**settings}
     if "timeout" not in settings:
         settings["timeout"] = 60
+
 
     if temperature is not None:
         temperature = max(min(temperature, 2), 0)
         json_body["temperature"] = temperature
-
+        tracing["temperature"]= temperature
     if max_tokens is not None:
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
-
+            tracing["temperature"] = temperature
+    langfuse_context.update_current_observation(
+        input=message, model=model, model_parameters=tracing
+    )
     response = session.post(url, headers=headers, json=json_body, **settings)
+    if response.status_code == 201 and response.json()["success"]:
+        json_data = response.json()
+        meta = dict(json_data["data"]["completion"])
+        del meta["choices"]
+        langfuse_context.update_current_observation(
+            output=json_data["data"]["completion"]["choices"],
+            usage_details={
+                "input": json_data["data"]["words"]["input"],
+                "output": json_data["data"]["words"]["output"],
+                "total": json_data["data"]["words"]["total"],
+                "input_cost": json_data["data"]["price"]["input"],
+                "output_cost": json_data["data"]["price"]["output"],
+                "total_cost": json_data["data"]["price"]["total"],
+            },
+            metadata=meta,
+            status_message=str(response.status_code),
+        )
+
+    else:
+        langfuse_context.update_current_observation(
+            output=response.text, status_message=str(response.status_code)
+        )
     return response
 
 
+@observe
 async def aio_file_upload(
     session,
     base_url: str,
@@ -103,6 +167,7 @@ async def aio_file_upload(
     return response
 
 
+@observe
 def file_upload(
     session,
     base_url: str,
@@ -140,6 +205,7 @@ def ImageSizer(size):
     raise Exception(f"Unknown Image Size {size}")
 
 
+@observe(as_type="generation")
 async def aio_image_generation(
     session,
     base_url: str,
@@ -172,12 +238,39 @@ async def aio_image_generation(
         "size": size,
         "variations": variations,
     }
+
     if "timeout" not in settings:
         settings["timeout"] = 300
+
+    tracing = {
+        "size": size,
+        "variations": variations,
+        **settings
+    }
+    langfuse_context.update_current_observation(
+        input=description, model=model, model_parameters=tracing
+    )
     response = await session.post(url, headers=headers, json=json_body, **settings)
+    if response.status_code == 201 and response.json()["success"]:
+        json_data = response.json()
+        output = dict(json_data["data"])
+        del output["price"]
+        langfuse_context.update_current_observation(
+            output=output,
+            usage_details={
+                "total_cost": json_data["data"]["price"]["total"],
+            },
+            status_message=str(response.status_code),
+        )
+
+    else:
+        langfuse_context.update_current_observation(
+            output=response.text, status_message=str(response.status_code)
+        )
     return response
 
 
+@observe(as_type="generation")
 def image_generation(
     session,
     base_url: str,
@@ -212,5 +305,29 @@ def image_generation(
     }
     if "timeout" not in settings:
         settings["timeout"] = 300
+    tracing = {
+        "size": size,
+        "variations": variations,
+        **settings
+    }
+    langfuse_context.update_current_observation(
+        input=description, model=model, model_parameters=tracing
+    )
     response = session.post(url, headers=headers, json=json_body, **settings)
+    if response.status_code == 201 and response.json()["success"]:
+        json_data = response.json()
+        output = dict(json_data["data"])
+        del output["price"]
+        langfuse_context.update_current_observation(
+            output=output,
+            usage_details={
+                "total_cost": json_data["data"]["price"]["total"],
+            },
+            status_message=str(response.status_code),
+        )
+
+    else:
+        langfuse_context.update_current_observation(
+            output=response.text, status_message=str(response.status_code)
+        )
     return response
