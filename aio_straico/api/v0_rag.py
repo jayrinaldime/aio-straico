@@ -39,7 +39,6 @@ class SearchType(Enum):
     similarity_score_threshold = "similarity_score_threshold"
 
 
-@observe
 async def aio_create_rag(
     session,
     base_url: str,
@@ -130,21 +129,18 @@ async def aio_create_rag(
     return response
 
 
-@observe
 async def aio_rags(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/rag/user"
     response = await session.get(url, headers=headers, **settings)
     return response
 
 
-@observe
 async def aio_rag(session, base_url: str, headers: dict, rag_id: str, **settings):
     url = f"{base_url}/v0/rag/{rag_id}"
     response = await session.get(url, headers=headers, **settings)
     return response
 
 
-@observe
 async def aio_rag_delete(
     session, base_url: str, headers: dict, rag_id: str, **settings
 ):
@@ -206,8 +202,8 @@ async def aio_rag_prompt_completion(
         meta = dict(json_data["response"])
         del meta["answer"]
         del meta["coins_used"]
-        #del meta["overall_words"]
-        #del meta["overall_price"]
+        # del meta["overall_words"]
+        # del meta["overall_price"]
         langfuse_context.update_current_observation(
             output=json_data["response"]["answer"],
             usage_details={
@@ -229,7 +225,6 @@ async def aio_rag_prompt_completion(
 #########################
 
 
-@observe
 def create_rag(
     session,
     base_url: str,
@@ -324,21 +319,18 @@ def create_rag(
     return response
 
 
-@observe
 def rags(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/rag/user"
     response = session.get(url, headers=headers, **settings)
     return response
 
 
-@observe
 def rag(session, base_url: str, headers: dict, rag_id: str, **settings):
     url = f"{base_url}/v0/rag/{rag_id}"
     response = session.get(url, headers=headers, **settings)
     return response
 
 
-@observe
 def rag_delete(session, base_url: str, headers: dict, rag_id: str, **settings):
     url = f"{base_url}/v0/rag/{rag_id}"
     response = session.delete(url, headers=headers, **settings)
@@ -397,8 +389,8 @@ def rag_prompt_completion(
         meta = dict(json_data["response"])
         del meta["answer"]
         del meta["coins_used"]
-        #del meta["overall_words"]
-        #del meta["overall_price"]
+        # del meta["overall_words"]
+        # del meta["overall_price"]
         langfuse_context.update_current_observation(
             output=json_data["response"]["answer"],
             usage_details={

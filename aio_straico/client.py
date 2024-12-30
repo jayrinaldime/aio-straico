@@ -144,7 +144,7 @@ class StraicoClient:
                     f"Too many youtube_urls files. API is limited to 4 Youtube URL attachments"
                 )
             v = 1
-        if isinstance(model,list) or isinstance(model,tuple):
+        if isinstance(model, list) or isinstance(model, tuple):
             v = 1
 
         else:

@@ -1,14 +1,12 @@
 from langfuse.decorators import observe, langfuse_context
 
 
-@observe
 async def aio_models(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v1/models"
     response = await session.get(url, headers=headers, **settings)
     return response
 
 
-@observe
 def models(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v1/models"
     response = session.get(url, headers=headers, **settings)

@@ -2,28 +2,24 @@ from enum import Enum
 from langfuse.decorators import observe, langfuse_context
 
 
-@observe
 async def aio_user(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/user"
     response = await session.get(url, headers=headers, **settings)
     return response
 
 
-@observe
 def user(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/user"
     response = session.get(url, headers=headers, **settings)
     return response
 
 
-@observe
 async def aio_models(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/models"
     response = await session.get(url, headers=headers, **settings)
     return response
 
 
-@observe
 def models(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/models"
     response = session.get(url, headers=headers, **settings)
@@ -107,11 +103,10 @@ def prompt_completion(
     if "timeout" not in settings:
         settings["timeout"] = 60
 
-
     if temperature is not None:
         temperature = max(min(temperature, 2), 0)
         json_body["temperature"] = temperature
-        tracing["temperature"]= temperature
+        tracing["temperature"] = temperature
     if max_tokens is not None:
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
@@ -146,7 +141,6 @@ def prompt_completion(
     return response
 
 
-@observe
 async def aio_file_upload(
     session,
     base_url: str,
@@ -167,7 +161,6 @@ async def aio_file_upload(
     return response
 
 
-@observe
 def file_upload(
     session,
     base_url: str,
@@ -242,11 +235,7 @@ async def aio_image_generation(
     if "timeout" not in settings:
         settings["timeout"] = 300
 
-    tracing = {
-        "size": size,
-        "variations": variations,
-        **settings
-    }
+    tracing = {"size": size, "variations": variations, **settings}
     langfuse_context.update_current_observation(
         input=description, model=model, model_parameters=tracing
     )
@@ -305,11 +294,7 @@ def image_generation(
     }
     if "timeout" not in settings:
         settings["timeout"] = 300
-    tracing = {
-        "size": size,
-        "variations": variations,
-        **settings
-    }
+    tracing = {"size": size, "variations": variations, **settings}
     langfuse_context.update_current_observation(
         input=description, model=model, model_parameters=tracing
     )
