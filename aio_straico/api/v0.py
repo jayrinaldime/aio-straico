@@ -1,4 +1,5 @@
 from enum import Enum
+from ..utils.tracing import observe, tracing_context, TRACING_ENABLED
 
 
 async def aio_user(session, base_url: str, headers: dict, **settings):
@@ -25,6 +26,7 @@ def models(session, base_url: str, headers: dict, **settings):
     return response
 
 
+@observe(as_type="generation")
 async def aio_prompt_completion(
     session,
     base_url: str,
@@ -49,11 +51,43 @@ async def aio_prompt_completion(
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
-
+    if TRACING_ENABLED:
+        tracing = dict(json_body)
+        del tracing["model"]
+        del tracing["message"]
+        tracing.update(settings)
+        tracing_context.update_current_observation(
+            input=message, model=model, model_parameters=tracing
+        )
     response = await session.post(url, headers=headers, json=json_body, **settings)
+    if TRACING_ENABLED:
+        if response.status_code == 201 and response.json()["success"]:
+            json_data = response.json()
+            meta = dict(json_data["data"]["completion"])
+            del meta["choices"]
+            tracing_context.update_current_observation(
+                output=json_data["data"]["completion"]["choices"],
+                usage_details={
+                    "input": json_data["data"]["words"]["input"],
+                    "output": json_data["data"]["words"]["output"],
+                    "total": json_data["data"]["words"]["total"],
+                    "input_cost": json_data["data"]["price"]["input"],
+                    "output_cost": json_data["data"]["price"]["output"],
+                    "total_cost": json_data["data"]["price"]["total"],
+                },
+                metadata=meta,
+                status_message=str(response.status_code),
+            )
+
+        else:
+            tracing_context.update_current_observation(
+                output=response.text, status_message=str(response.status_code)
+            )
+
     return response
 
 
+@observe(as_type="generation")
 def prompt_completion(
     session,
     base_url: str,
@@ -78,8 +112,38 @@ def prompt_completion(
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
-
+    if TRACING_ENABLED:
+        tracing = dict(json_body)
+        del tracing["model"]
+        del tracing["message"]
+        tracing.update(settings)
+        tracing_context.update_current_observation(
+            input=message, model=model, model_parameters=tracing
+        )
     response = session.post(url, headers=headers, json=json_body, **settings)
+    if TRACING_ENABLED:
+        if response.status_code == 201 and response.json()["success"]:
+            json_data = response.json()
+            meta = dict(json_data["data"]["completion"])
+            del meta["choices"]
+            tracing_context.update_current_observation(
+                output=json_data["data"]["completion"]["choices"],
+                usage_details={
+                    "input": json_data["data"]["words"]["input"],
+                    "output": json_data["data"]["words"]["output"],
+                    "total": json_data["data"]["words"]["total"],
+                    "input_cost": json_data["data"]["price"]["input"],
+                    "output_cost": json_data["data"]["price"]["output"],
+                    "total_cost": json_data["data"]["price"]["total"],
+                },
+                metadata=meta,
+                status_message=str(response.status_code),
+            )
+
+        else:
+            tracing_context.update_current_observation(
+                output=response.text, status_message=str(response.status_code)
+            )
     return response
 
 
@@ -140,6 +204,7 @@ def ImageSizer(size):
     raise Exception(f"Unknown Image Size {size}")
 
 
+@observe(as_type="generation")
 async def aio_image_generation(
     session,
     base_url: str,
@@ -172,12 +237,36 @@ async def aio_image_generation(
         "size": size,
         "variations": variations,
     }
+
     if "timeout" not in settings:
         settings["timeout"] = 300
+    if TRACING_ENABLED:
+        tracing = {"size": size, "variations": variations, **settings}
+        tracing_context.update_current_observation(
+            input=description, model=model, model_parameters=tracing
+        )
     response = await session.post(url, headers=headers, json=json_body, **settings)
+    if TRACING_ENABLED:
+        if response.status_code == 201 and response.json()["success"]:
+            json_data = response.json()
+            output = dict(json_data["data"])
+            del output["price"]
+            tracing_context.update_current_observation(
+                output=output,
+                usage_details={
+                    "total_cost": json_data["data"]["price"]["total"],
+                },
+                status_message=str(response.status_code),
+            )
+
+        else:
+            tracing_context.update_current_observation(
+                output=response.text, status_message=str(response.status_code)
+            )
     return response
 
 
+@observe(as_type="generation")
 def image_generation(
     session,
     base_url: str,
@@ -212,5 +301,27 @@ def image_generation(
     }
     if "timeout" not in settings:
         settings["timeout"] = 300
+    if TRACING_ENABLED:
+        tracing = {"size": size, "variations": variations, **settings}
+        tracing_context.update_current_observation(
+            input=description, model=model, model_parameters=tracing
+        )
     response = session.post(url, headers=headers, json=json_body, **settings)
+    if TRACING_ENABLED:
+        if response.status_code == 201 and response.json()["success"]:
+            json_data = response.json()
+            output = dict(json_data["data"])
+            del output["price"]
+            tracing_context.update_current_observation(
+                output=output,
+                usage_details={
+                    "total_cost": json_data["data"]["price"]["total"],
+                },
+                status_message=str(response.status_code),
+            )
+
+        else:
+            tracing_context.update_current_observation(
+                output=response.text, status_message=str(response.status_code)
+            )
     return response

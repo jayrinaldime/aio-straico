@@ -144,6 +144,9 @@ class StraicoClient:
                     f"Too many youtube_urls files. API is limited to 4 Youtube URL attachments"
                 )
             v = 1
+        if isinstance(model, list) or isinstance(model, tuple):
+            v = 1
+
         else:
             v = 0
 
@@ -481,7 +484,7 @@ class StraicoClient:
     ##############################
     def rag_object(self, rag_id):
         data = self.rag(rag_id=rag_id)
-        agent_obj = StraicoAgent(self, data)
+        agent_obj = StraicoRAG(self, data)
         return agent_obj
 
     def rag_objects(self):
