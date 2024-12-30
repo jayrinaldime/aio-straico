@@ -1,4 +1,4 @@
-from langfuse.decorators import observe, langfuse_context
+from ..utils.tracing import observe, tracing_context, TRACING_ENABLED
 
 
 async def aio_models(session, base_url: str, headers: dict, **settings):
@@ -54,39 +54,40 @@ async def aio_prompt_completion(
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
-
-    tracing = dict(json_body)
-    del tracing["models"]
-    del tracing["message"]
-    tracing.update(settings)
-    langfuse_context.update_current_observation(
-        input=message, model=", ".join(models), model_parameters=tracing
-    )
+    if TRACING_ENABLED:
+        tracing = dict(json_body)
+        del tracing["models"]
+        del tracing["message"]
+        tracing.update(settings)
+        tracing_context.update_current_observation(
+            input=message, model=", ".join(models), model_parameters=tracing
+        )
     response = await session.post(url, headers=headers, json=json_body, **settings)
-    if response.status_code == 201 and response.json()["success"]:
-        json_data = response.json()
-        meta = dict(json_data["data"])
-        del meta["completions"]
-        del meta["overall_words"]
-        del meta["overall_price"]
-        langfuse_context.update_current_observation(
-            output=json_data["data"]["completions"],
-            usage_details={
-                "input": json_data["data"]["overall_words"]["input"],
-                "output": json_data["data"]["overall_words"]["output"],
-                "total": json_data["data"]["overall_words"]["total"],
-                "input_cost": json_data["data"]["overall_price"]["input"],
-                "output_cost": json_data["data"]["overall_price"]["output"],
-                "total_cost": json_data["data"]["overall_price"]["total"],
-            },
-            metadata=meta,
-            status_message=str(response.status_code),
-        )
+    if TRACING_ENABLED:
+        if response.status_code == 201 and response.json()["success"]:
+            json_data = response.json()
+            meta = dict(json_data["data"])
+            del meta["completions"]
+            del meta["overall_words"]
+            del meta["overall_price"]
+            tracing_context.update_current_observation(
+                output=json_data["data"]["completions"],
+                usage_details={
+                    "input": json_data["data"]["overall_words"]["input"],
+                    "output": json_data["data"]["overall_words"]["output"],
+                    "total": json_data["data"]["overall_words"]["total"],
+                    "input_cost": json_data["data"]["overall_price"]["input"],
+                    "output_cost": json_data["data"]["overall_price"]["output"],
+                    "total_cost": json_data["data"]["overall_price"]["total"],
+                },
+                metadata=meta,
+                status_message=str(response.status_code),
+            )
 
-    else:
-        langfuse_context.update_current_observation(
-            output=response.text, status_message=str(response.status_code)
-        )
+        else:
+            tracing_context.update_current_observation(
+                output=response.text, status_message=str(response.status_code)
+            )
     return response
 
 
@@ -128,36 +129,38 @@ def prompt_completion(
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
-    tracing = dict(json_body)
-    del tracing["models"]
-    del tracing["message"]
-    tracing.update(settings)
-    langfuse_context.update_current_observation(
-        input=message, model=", ".join(models), model_parameters=tracing
-    )
+    if TRACING_ENABLED:
+        tracing = dict(json_body)
+        del tracing["models"]
+        del tracing["message"]
+        tracing.update(settings)
+        tracing_context.update_current_observation(
+            input=message, model=", ".join(models), model_parameters=tracing
+        )
     response = session.post(url, headers=headers, json=json_body, **settings)
-    if response.status_code == 201 and response.json()["success"]:
-        json_data = response.json()
-        meta = dict(json_data["data"])
-        del meta["completions"]
-        del meta["overall_words"]
-        del meta["overall_price"]
-        langfuse_context.update_current_observation(
-            output=json_data["data"]["completions"],
-            usage_details={
-                "input": json_data["data"]["overall_words"]["input"],
-                "output": json_data["data"]["overall_words"]["output"],
-                "total": json_data["data"]["overall_words"]["total"],
-                "input_cost": json_data["data"]["overall_price"]["input"],
-                "output_cost": json_data["data"]["overall_price"]["output"],
-                "total_cost": json_data["data"]["overall_price"]["total"],
-            },
-            metadata=meta,
-            status_message=str(response.status_code),
-        )
+    if TRACING_ENABLED:
+        if response.status_code == 201 and response.json()["success"]:
+            json_data = response.json()
+            meta = dict(json_data["data"])
+            del meta["completions"]
+            del meta["overall_words"]
+            del meta["overall_price"]
+            tracing_context.update_current_observation(
+                output=json_data["data"]["completions"],
+                usage_details={
+                    "input": json_data["data"]["overall_words"]["input"],
+                    "output": json_data["data"]["overall_words"]["output"],
+                    "total": json_data["data"]["overall_words"]["total"],
+                    "input_cost": json_data["data"]["overall_price"]["input"],
+                    "output_cost": json_data["data"]["overall_price"]["output"],
+                    "total_cost": json_data["data"]["overall_price"]["total"],
+                },
+                metadata=meta,
+                status_message=str(response.status_code),
+            )
 
-    else:
-        langfuse_context.update_current_observation(
-            output=response.text, status_message=str(response.status_code)
-        )
+        else:
+            tracing_context.update_current_observation(
+                output=response.text, status_message=str(response.status_code)
+            )
     return response

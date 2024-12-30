@@ -1,5 +1,5 @@
 from enum import Enum
-from langfuse.decorators import observe, langfuse_context
+from ..utils.tracing import observe, tracing_context, TRACING_ENABLED
 
 
 async def aio_user(session, base_url: str, headers: dict, **settings):
@@ -12,7 +12,7 @@ def user(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/user"
     response = session.get(url, headers=headers, **settings)
     return response
-
+TRACING_ENABLED
 
 async def aio_models(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/models"
@@ -39,7 +39,7 @@ async def aio_prompt_completion(
 ):
     url = f"{base_url}/v0/prompt/completion"
     json_body = {"model": model, "message": message}
-    tracing = {}
+
 
     if "timeout" not in settings:
         settings["timeout"] = 60
@@ -47,41 +47,44 @@ async def aio_prompt_completion(
     if temperature is not None:
         temperature = max(min(temperature, 2), 0)
         json_body["temperature"] = temperature
-        tracing["temperature"] = temperature
+
 
     if max_tokens is not None:
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
-            tracing["max_tokens"] = max_tokens
-    tracing.update(settings)
-
-    langfuse_context.update_current_observation(
-        input=message, model=model, model_parameters=tracing
-    )
+    if TRACING_ENABLED:
+        tracing = dict(json_body)
+        del tracing["model"]
+        del tracing["message"]
+        tracing.update(settings)
+        tracing_context.update_current_observation(
+            input=message, model=model, model_parameters=tracing
+        )
     response = await session.post(url, headers=headers, json=json_body, **settings)
-    if response.status_code == 201 and response.json()["success"]:
-        json_data = response.json()
-        meta = dict(json_data["data"]["completion"])
-        del meta["choices"]
-        langfuse_context.update_current_observation(
-            output=json_data["data"]["completion"]["choices"],
-            usage_details={
-                "input": json_data["data"]["words"]["input"],
-                "output": json_data["data"]["words"]["output"],
-                "total": json_data["data"]["words"]["total"],
-                "input_cost": json_data["data"]["price"]["input"],
-                "output_cost": json_data["data"]["price"]["output"],
-                "total_cost": json_data["data"]["price"]["total"],
-            },
-            metadata=meta,
-            status_message=str(response.status_code),
-        )
+    if TRACING_ENABLED:
+        if response.status_code == 201 and response.json()["success"]:
+            json_data = response.json()
+            meta = dict(json_data["data"]["completion"])
+            del meta["choices"]
+            tracing_context.update_current_observation(
+                output=json_data["data"]["completion"]["choices"],
+                usage_details={
+                    "input": json_data["data"]["words"]["input"],
+                    "output": json_data["data"]["words"]["output"],
+                    "total": json_data["data"]["words"]["total"],
+                    "input_cost": json_data["data"]["price"]["input"],
+                    "output_cost": json_data["data"]["price"]["output"],
+                    "total_cost": json_data["data"]["price"]["total"],
+                },
+                metadata=meta,
+                status_message=str(response.status_code),
+            )
 
-    else:
-        langfuse_context.update_current_observation(
-            output=response.text, status_message=str(response.status_code)
-        )
+        else:
+            tracing_context.update_current_observation(
+                output=response.text, status_message=str(response.status_code)
+            )
 
     return response
 
@@ -99,45 +102,50 @@ def prompt_completion(
 ):
     url = f"{base_url}/v0/prompt/completion"
     json_body = {"model": model, "message": message}
-    tracing = {**settings}
+
     if "timeout" not in settings:
         settings["timeout"] = 60
 
     if temperature is not None:
         temperature = max(min(temperature, 2), 0)
         json_body["temperature"] = temperature
-        tracing["temperature"] = temperature
+
     if max_tokens is not None:
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
-            tracing["temperature"] = temperature
-    langfuse_context.update_current_observation(
-        input=message, model=model, model_parameters=tracing
-    )
+    if TRACING_ENABLED:
+        tracing = dict(json_body)
+        del tracing["model"]
+        del tracing["message"]
+        tracing.update(settings)
+        tracing_context.update_current_observation(
+            input=message, model=model, model_parameters=tracing
+        )
     response = session.post(url, headers=headers, json=json_body, **settings)
-    if response.status_code == 201 and response.json()["success"]:
-        json_data = response.json()
-        meta = dict(json_data["data"]["completion"])
-        del meta["choices"]
-        langfuse_context.update_current_observation(
-            output=json_data["data"]["completion"]["choices"],
-            usage_details={
-                "input": json_data["data"]["words"]["input"],
-                "output": json_data["data"]["words"]["output"],
-                "total": json_data["data"]["words"]["total"],
-                "input_cost": json_data["data"]["price"]["input"],
-                "output_cost": json_data["data"]["price"]["output"],
-                "total_cost": json_data["data"]["price"]["total"],
-            },
-            metadata=meta,
-            status_message=str(response.status_code),
-        )
+    if TRACING_ENABLED:
+        if response.status_code == 201 and response.json()["success"]:
+            json_data = response.json()
+            meta = dict(json_data["data"]["completion"])
+            del meta["choices"]
+            tracing_context.update_current_observation(
+                output=json_data["data"]["completion"]["choices"],
+                usage_details={
+                    "input": json_data["data"]["words"]["input"],
+                    "output": json_data["data"]["words"]["output"],
+                    "total": json_data["data"]["words"]["total"],
+                    "input_cost": json_data["data"]["price"]["input"],
+                    "output_cost": json_data["data"]["price"]["output"],
+                    "total_cost": json_data["data"]["price"]["total"],
+                },
+                metadata=meta,
+                status_message=str(response.status_code),
+            )
 
-    else:
-        langfuse_context.update_current_observation(
-            output=response.text, status_message=str(response.status_code)
-        )
+        else:
+            tracing_context.update_current_observation(
+                output=response.text, status_message=str(response.status_code)
+            )
     return response
 
 
@@ -234,28 +242,29 @@ async def aio_image_generation(
 
     if "timeout" not in settings:
         settings["timeout"] = 300
-
-    tracing = {"size": size, "variations": variations, **settings}
-    langfuse_context.update_current_observation(
-        input=description, model=model, model_parameters=tracing
-    )
+    if TRACING_ENABLED:
+        tracing = {"size": size, "variations": variations, **settings}
+        tracing_context.update_current_observation(
+            input=description, model=model, model_parameters=tracing
+        )
     response = await session.post(url, headers=headers, json=json_body, **settings)
-    if response.status_code == 201 and response.json()["success"]:
-        json_data = response.json()
-        output = dict(json_data["data"])
-        del output["price"]
-        langfuse_context.update_current_observation(
-            output=output,
-            usage_details={
-                "total_cost": json_data["data"]["price"]["total"],
-            },
-            status_message=str(response.status_code),
-        )
+    if TRACING_ENABLED:
+        if response.status_code == 201 and response.json()["success"]:
+            json_data = response.json()
+            output = dict(json_data["data"])
+            del output["price"]
+            tracing_context.update_current_observation(
+                output=output,
+                usage_details={
+                    "total_cost": json_data["data"]["price"]["total"],
+                },
+                status_message=str(response.status_code),
+            )
 
-    else:
-        langfuse_context.update_current_observation(
-            output=response.text, status_message=str(response.status_code)
-        )
+        else:
+            tracing_context.update_current_observation(
+                output=response.text, status_message=str(response.status_code)
+            )
     return response
 
 
@@ -294,25 +303,27 @@ def image_generation(
     }
     if "timeout" not in settings:
         settings["timeout"] = 300
-    tracing = {"size": size, "variations": variations, **settings}
-    langfuse_context.update_current_observation(
-        input=description, model=model, model_parameters=tracing
-    )
+    if TRACING_ENABLED:
+        tracing = {"size": size, "variations": variations, **settings}
+        tracing_context.update_current_observation(
+            input=description, model=model, model_parameters=tracing
+        )
     response = session.post(url, headers=headers, json=json_body, **settings)
-    if response.status_code == 201 and response.json()["success"]:
-        json_data = response.json()
-        output = dict(json_data["data"])
-        del output["price"]
-        langfuse_context.update_current_observation(
-            output=output,
-            usage_details={
-                "total_cost": json_data["data"]["price"]["total"],
-            },
-            status_message=str(response.status_code),
-        )
+    if TRACING_ENABLED:
+        if response.status_code == 201 and response.json()["success"]:
+            json_data = response.json()
+            output = dict(json_data["data"])
+            del output["price"]
+            tracing_context.update_current_observation(
+                output=output,
+                usage_details={
+                    "total_cost": json_data["data"]["price"]["total"],
+                },
+                status_message=str(response.status_code),
+            )
 
-    else:
-        langfuse_context.update_current_observation(
-            output=response.text, status_message=str(response.status_code)
-        )
+        else:
+            tracing_context.update_current_observation(
+                output=response.text, status_message=str(response.status_code)
+            )
     return response
