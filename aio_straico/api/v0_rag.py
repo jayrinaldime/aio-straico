@@ -384,6 +384,32 @@ def rag_prompt_completion(
 
     if score_threshold is not None:
         payload["score_threshold"] = score_threshold
-
+    tracing = dict(payload)
+    del tracing["model"]
+    del tracing["prompt"]
+    tracing.update(settings)
+    langfuse_context.update_current_observation(
+        input=message, model=model, model_parameters=tracing
+    )
     response = session.post(url, headers=headers, data=payload, **settings)
+    if response.status_code == 200 and response.json()["success"]:
+        json_data = response.json()
+        meta = dict(json_data["response"])
+        del meta["answer"]
+        del meta["coins_used"]
+        #del meta["overall_words"]
+        #del meta["overall_price"]
+        langfuse_context.update_current_observation(
+            output=json_data["response"]["answer"],
+            usage_details={
+                "total_cost": json_data["response"]["coins_used"],
+            },
+            metadata=meta,
+            status_message=str(response.status_code),
+        )
+
+    else:
+        langfuse_context.update_current_observation(
+            output=response.text, status_message=str(response.status_code)
+        )
     return response
