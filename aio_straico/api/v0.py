@@ -12,7 +12,7 @@ def user(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/user"
     response = session.get(url, headers=headers, **settings)
     return response
-TRACING_ENABLED
+
 
 async def aio_models(session, base_url: str, headers: dict, **settings):
     url = f"{base_url}/v0/models"
@@ -40,14 +40,12 @@ async def aio_prompt_completion(
     url = f"{base_url}/v0/prompt/completion"
     json_body = {"model": model, "message": message}
 
-
     if "timeout" not in settings:
         settings["timeout"] = 60
 
     if temperature is not None:
         temperature = max(min(temperature, 2), 0)
         json_body["temperature"] = temperature
-
 
     if max_tokens is not None:
         max_tokens = max(max_tokens, 0)
