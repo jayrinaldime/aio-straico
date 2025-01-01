@@ -9,12 +9,16 @@ if TRACING_ENABLED:
         tracing_context.flush()
 
 else:
+    from functools import wraps
+    from inspect import iscoroutinefunction, isfunction
 
     def observe(*args, **kwargs):
-        def d(func):
+        def decorator(func):
             return func
 
-        return d
+        if len(args) == 1 and (isfunction(args[0]) or iscoroutinefunction(args[0])):
+            return args[0]
+        return decorator
 
     class tracing_context:
         @classmethod
