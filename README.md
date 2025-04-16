@@ -176,6 +176,29 @@ Transcript: . . .
 """
 ```
 
+#### Add Image File and describe the image
+```python
+images = [Path("test_data/image/sample.jpeg")]
+
+response = await client.prompt_completion(
+    "openai/gpt-4o-mini",
+    "describe the image",
+    images=images
+)
+
+print("## Image Description")
+print(
+    response["completions"]["openai/gpt-4o-mini"]["completion"]["choices"][0][
+        "message"
+    ]["content"]
+)
+
+"""
+## Image Description 
+The . . .
+"""
+```
+
 ### Image Generation 
 
 #### Generate images and download zip file to local directory 
