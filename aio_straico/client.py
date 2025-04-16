@@ -122,6 +122,7 @@ class StraicoClient:
         message,
         *,
         files: [Path | str] = [],
+        images: [Path | str] = [],
         youtube_urls: [str] = [],
         temperature: float = None,
         max_tokens: float = None,
@@ -133,8 +134,8 @@ class StraicoClient:
             model = model["model"]
         elif type(model) == Model:
             model = model.model
-
-        if len(files) > 0 or len(youtube_urls) > 0:
+        v = None
+        if len(files) > 0 or len(youtube_urls) > 0 or len(images) > 0:
             if is_listable_not_string(files) and len(files) > 4:
                 raise Exception(
                     f"Too many attached files. API is limited to 4 File attachments"
@@ -143,12 +144,26 @@ class StraicoClient:
                 raise Exception(
                     f"Too many youtube_urls files. API is limited to 4 Youtube URL attachments"
                 )
-            v = 1
-        if isinstance(model, list) or isinstance(model, tuple):
+            if is_listable_not_string(images) and len(images) > 4:
+                raise Exception(
+                    f"Too many image files. API is limited to 4 Image URL attachments"
+                )
             v = 1
 
-        else:
-            v = 0
+        if v is None:
+            if isinstance(model, list) or isinstance(model, tuple):
+                v = 1
+                new_model = []
+                for m in model:
+                    if isinstance(m, dict) and "model" in m:
+                        new_model.append(m["model"])
+                    elif isinstance(m, Model):
+                        new_model.append(m.model)
+                    else:
+                        new_model.append(m)
+                model = new_model
+            else:
+                v = 0
 
         if v == 0:
             response = prompt_completion0(
@@ -173,17 +188,36 @@ class StraicoClient:
                 if isinstance(file, str):
                     if not file.strip().lower().startswith("http"):
                         file_path = Path(file)
-                        if file_path.exist():
+                        if file_path.exists() and file_path.is_file():
                             file_url = self.upload_file(file)
                         else:
                             raise Exception(f"Unknown file {file}")
                     else:
                         file_url = file
-                elif isinstance(file, Path):
+                elif isinstance(file, Path) and file.exists() and file.is_file():
                     file_url = self.upload_file(file)
                 else:
                     raise Exception(f"Unknown file type {type(file)} for file {file}")
                 file_urls.append(file_url)
+
+            image_urls = []
+            for image in images:
+                if isinstance(image, str):
+                    if not image.strip().lower().startswith("http"):
+                        file_path = Path(image)
+                        if file_path.exists() and file_path.is_file():
+                            image_url = self.upload_file(image)
+                        else:
+                            raise Exception(f"Unknown file {image}")
+                    else:
+                        image_url = image
+                elif isinstance(image, Path) and image.exists() and image.is_file():
+                    image_url = self.upload_file(image)
+                else:
+                    raise Exception(
+                        f"Unknown file type {type(image)} for Image {image}"
+                    )
+                image_urls.append(image_url)
 
             response = prompt_completion1(
                 self._session,
@@ -192,6 +226,7 @@ class StraicoClient:
                 model,
                 message,
                 file_urls=file_urls,
+                images=image_urls,
                 youtube_urls=youtube_urls,
                 display_transcripts=display_transcripts,
                 temperature=temperature,
@@ -230,12 +265,12 @@ class StraicoClient:
             "kt": "text/x-kotlin",
             "xml": "application/xml",
             "ts": "application/typescript",
-            # "png": "image/png",
-            # "jpg": "image/jpeg",
-            # "jpeg": "image/jpeg",
-            # "gif": "image/gif",
+            "png": "image/png",
+            "jpg": "image/jpeg",
+            "jpeg": "image/jpeg",
+            "webp": "image/webp",
+            "gif": "image/gif",
             # "bmp": "image/bmp",
-            # "webp": "image/webp",
             # "tiff": "image/tiff",
             # "tif": "image/tiff",
             # "svg": "image/svg+xml",
