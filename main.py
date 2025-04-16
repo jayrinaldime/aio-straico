@@ -221,8 +221,9 @@ def main():
         #     print("Transcript:", transcript["text"])
         #     print()
 
+
 async def async_upload_image():
-    img = Path(".")/"test_data"/"image"/"sample.jpeg"
+    img = Path(".") / "test_data" / "image" / "sample.jpeg"
     async with aio_straico_client() as client:
         reply = await client.prompt_completion(
             "openai/gpt-4o-mini",
@@ -233,8 +234,9 @@ async def async_upload_image():
         )
         pprint(reply)
 
+
 def upload_image():
-    img = Path(".")/"test_data"/"image"/"sample.jpeg"
+    img = Path(".") / "test_data" / "image" / "sample.jpeg"
     with straico_client() as client:
         reply = client.prompt_completion(
             "openai/gpt-4o-mini",
@@ -248,4 +250,4 @@ def upload_image():
 
 if __name__ == "__main__":
     asyncio.run(async_upload_image())
-    #upload_image()
+    # upload_image()
