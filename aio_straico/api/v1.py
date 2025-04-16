@@ -22,6 +22,7 @@ async def aio_prompt_completion(
     message,
     *,
     file_urls=[],
+    images=[],
     youtube_urls=[],
     display_transcripts=False,
     temperature: float = None,
@@ -36,6 +37,9 @@ async def aio_prompt_completion(
 
     if 0 < len(file_urls) <= 4:
         json_body["file_urls"] = file_urls
+
+    if 0 < len(images) <= 4:
+        json_body["images"] = images
 
     if 0 < len(youtube_urls) <= 4:
         json_body["youtube_urls"] = youtube_urls
@@ -100,6 +104,7 @@ def prompt_completion(
     message,
     *,
     file_urls=[],
+    images=[],
     youtube_urls=[],
     display_transcripts=False,
     temperature: float = None,
@@ -114,10 +119,16 @@ def prompt_completion(
 
     if 0 < len(file_urls) <= 4:
         json_body["file_urls"] = file_urls
+
+    if 0 < len(images) <= 4:
+        json_body["images"] = images
+
     if 0 < len(youtube_urls) <= 4:
         json_body["youtube_urls"] = youtube_urls
+
     if display_transcripts:
         json_body["display_transcripts"] = True
+
     if "timeout" not in settings:
         settings["timeout"] = 300
 
