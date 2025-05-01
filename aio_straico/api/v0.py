@@ -214,6 +214,7 @@ async def aio_image_generation(
     description: str,
     size: ImageSize | str,
     variations: int,
+    seed: int = None,
     **settings,
 ):
     url = f"{base_url}/v0/image/generation"
@@ -238,8 +239,12 @@ async def aio_image_generation(
         "variations": variations,
     }
 
+    if seed is not None:
+        json_body["seed"] = seed
+
     if "timeout" not in settings:
         settings["timeout"] = 300
+
     if TRACING_ENABLED:
         tracing = {"size": size, "variations": variations, **settings}
         tracing_context.update_current_observation(
@@ -276,6 +281,7 @@ def image_generation(
     description: str,
     size: ImageSize | str,
     variations: int,
+    seed: int = None,
     **settings,
 ):
     url = f"{base_url}/v0/image/generation"
@@ -299,8 +305,12 @@ def image_generation(
         "size": size,
         "variations": variations,
     }
+    if seed is not None:
+        json_body["seed"] = seed
+
     if "timeout" not in settings:
         settings["timeout"] = 300
+
     if TRACING_ENABLED:
         tracing = {"size": size, "variations": variations, **settings}
         tracing_context.update_current_observation(
