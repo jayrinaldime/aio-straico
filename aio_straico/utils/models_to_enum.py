@@ -61,6 +61,12 @@ def __to_enum_object(models):
 
 def to_model_enum(models):
     if "chat" in models and "image" in models:  # v1
-        return __to_enum_object(models["chat"]), __to_enum_object(models["image"])
+        chat_models = __to_enum_object(models["chat"])
+        try:
+            image_models = __to_enum_object(models["image"])
+        except:
+            image_models = __to_enum_object(models["image"][0])
+
+        return chat_models, image_models
     else:  # v0
         return __to_enum_object(models)
