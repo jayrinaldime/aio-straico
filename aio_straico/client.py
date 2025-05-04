@@ -320,7 +320,12 @@ class StraicoClient:
     ##############################
     @retry_on_disconnect
     def image_generation(
-        self, model, description: str, size: ImageSize | str, variations: int
+        self,
+        model,
+        description: str,
+        size: ImageSize | str,
+        variations: int,
+        seed: int = None,
     ):
         if type(model) == dict and "model" in model:
             model = model["model"]
@@ -335,6 +340,7 @@ class StraicoClient:
             description=description,
             size=size,
             variations=variations,
+            seed=seed,
             **self._client_settings,
         )
         if response.status_code == 201 and response.json()["success"]:
@@ -347,11 +353,14 @@ class StraicoClient:
         size: ImageSize | str,
         variations: int,
         destination_zip_path: Path | str,
+        seed: int = None,
     ) -> Path:
         if type(destination_zip_path) == str:
             destination_zip_path = Path(destination_zip_path)
 
-        image_details = self.image_generation(model, description, size, variations)
+        image_details = self.image_generation(
+            model, description, size, variations, seed=seed
+        )
 
         zip_url = image_details["zip"]
 
@@ -374,6 +383,7 @@ class StraicoClient:
         size: ImageSize | str,
         variations: int,
         destination_directory_path: Path | str,
+        seed: int = None,
     ) -> [Path]:
         if type(destination_directory_path) == str:
             destination_directory_path = Path(destination_directory_path)
@@ -381,7 +391,9 @@ class StraicoClient:
         if not destination_directory_path.is_dir():
             raise Exception("Destination path is not a directory")
 
-        image_details = self.image_generation(model, description, size, variations)
+        image_details = self.image_generation(
+            model, description, size, variations, seed=seed
+        )
 
         image_urls = image_details["images"]
         image_paths = []
