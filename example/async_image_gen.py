@@ -12,7 +12,7 @@ SEED = 12345
 # The value must be between 0 and 2,147,483,647.
 
 # Note:
-# After some testing depending on the model used result may bot be the same!
+# After some testing depending on the model used result may not be the same!
 # The image is equivalent or mostly the same.
 
 # Same Result Models
