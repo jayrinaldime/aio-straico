@@ -26,18 +26,18 @@ SEED = 12345
 # Ideogram V1 Turbo
 # Ideogram V2A Turbo
 
+
 async def generate_image(image_model_id, description, output_directory):
     async with aio_straico_client(timeout=600) as client:
         image_paths = await client.image_generation_as_images(
             model=image_model_id,
             description=description,
-            size=ImageSize.square,
-            variations=1,
+            size=ImageSize.square,  # or ImageSize.portrait, ImageSize.landscape,
+            variations=1,  # 1 to 4
             destination_directory_path=output_directory,
             seed=SEED,
         )
         print(image_model_id, image_paths)
-
 
 
 async def async_main():
@@ -46,6 +46,9 @@ async def async_main():
         parent_image_directory = Path("Images")
         for image_model in models_v1["image"][0]:
             image_model_id = image_model["model"]
+
+            # dall-e-3 is does not support the seed parameter
+            # hence only flux and ideogram models
             if image_model_id == "openai/dall-e-3":
                 continue
 

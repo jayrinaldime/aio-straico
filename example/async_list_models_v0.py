@@ -14,7 +14,6 @@ async def async_main():
 
         pprint(models_v0)
 
-
         print(chat_models.openai.gpt_4o_mini)
 
 
