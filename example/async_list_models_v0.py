@@ -2,7 +2,6 @@ import asyncio
 from aio_straico import aio_straico_client
 from pprint import pprint
 from aio_straico.utils import (
-    to_model_mapping_by_name,
     to_model_enum,
 )
 

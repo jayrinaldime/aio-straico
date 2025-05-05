@@ -21,7 +21,7 @@ class Model:
         return str(self.properties)
 
 
-def __python_name(name):
+def _python_name(name):
     f = []
     for x in name:
         if x.isalnum():
@@ -33,10 +33,10 @@ def __python_name(name):
     return x.strip("_").lower()
 
 
-def __rename(model, name, value):
+def _rename(model, name, value):
     name = name.split(":")[-1].strip()
     namespace = model.split("/")[0]
-    return __python_name(namespace), __python_name(name), value
+    return _python_name(namespace), _python_name(name), value
 
 
 def __create_object(mapping):
@@ -50,7 +50,7 @@ def __create_object(mapping):
 
 
 def __to_enum_object(models):
-    f = [__rename(m["model"], m["name"], m) for m in models]
+    f = [_rename(m["model"], m["name"], m) for m in models]
     mapping = {}
     for namespace, model, value in f:
         v = mapping.get(namespace, list())
