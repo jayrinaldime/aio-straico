@@ -2,7 +2,7 @@ import asyncio
 from aio_straico import aio_straico_client
 from aio_straico.utils import to_model_enum
 
-async def async_transcribe():
+async def async_youtube_transcribe():
     async with aio_straico_client() as client:
         models_v1 = await client.models(v=1)
         chat_models, image_models = to_model_enum(models_v1)
@@ -25,4 +25,4 @@ async def async_transcribe():
 
 
 if __name__ == "__main__":
-    asyncio.run(async_transcribe())
+    asyncio.run(async_youtube_transcribe())
