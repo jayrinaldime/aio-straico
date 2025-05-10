@@ -3,6 +3,7 @@ from aio_straico import aio_straico_client
 from aio_straico.utils import to_model_enum
 from pathlib import Path
 
+
 async def async_audio_transcribe():
     async with aio_straico_client() as client:
         models_v1 = await client.models(v=1)
@@ -29,6 +30,7 @@ async def async_audio_transcribe():
             print("Name:", transcript["name"])
             print("Transcript:", transcript["text"])
             print()
+
 
 if __name__ == "__main__":
     asyncio.run(async_audio_transcribe())

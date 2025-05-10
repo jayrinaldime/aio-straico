@@ -19,7 +19,9 @@ async def async_main():
 
         cheap_models = cheapest_models(image_input_models)
         for cheap_model in cheap_models:
-            print(f"{cheap_model["name"]=} {cheap_model["pricing"]["coins"]=}")
+            model_name = cheap_model["name"]
+            model_price = cheap_model["pricing"]["coins"]
+            print(f"{model_name=} {model_price=}")
 
             img = Path("..") / "test_data" / "image" / "sample.jpeg"
             reply = await client.prompt_completion(
@@ -43,6 +45,7 @@ async def async_main():
             else:
                 print(reply["completions"][model_id]["completion"]["error"])
             break
+
 
 if __name__ == "__main__":
     asyncio.run(async_main())
