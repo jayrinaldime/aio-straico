@@ -317,6 +317,8 @@ class AsyncStraicoClient:
         size: ImageSize | str,
         variations: int,
         seed: int = None,
+        should_enhance_description: bool = False,
+        enhancement_instruction: str = None,
     ):
         if type(model) == dict and "model" in model:
             model = model["model"]
@@ -332,6 +334,8 @@ class AsyncStraicoClient:
             size=size,
             variations=variations,
             seed=seed,
+            should_enhance_description=should_enhance_description,
+            enhancement_instruction=enhancement_instruction,
             **self._client_settings,
         )
         if response.status_code == 201 and response.json()["success"]:
@@ -345,12 +349,20 @@ class AsyncStraicoClient:
         variations: int,
         destination_zip_path: Path | str,
         seed: int = None,
+        should_enhance_description: bool = False,
+        enhancement_instruction: str = None,
     ) -> Path:
         if type(destination_zip_path) == str:
             destination_zip_path = Path(destination_zip_path)
 
         image_details = await self.image_generation(
-            model, description, size, variations, seed=seed
+            model,
+            description,
+            size,
+            variations,
+            seed=seed,
+            should_enhance_description=should_enhance_description,
+            enhancement_instruction=enhancement_instruction,
         )
 
         zip_url = image_details["zip"]
@@ -378,6 +390,8 @@ class AsyncStraicoClient:
         variations: int,
         destination_directory_path: Path | str,
         seed: int = None,
+        should_enhance_description: bool = False,
+        enhancement_instruction: str = None,
     ) -> [Path]:
         if type(destination_directory_path) == str:
             destination_directory_path = Path(destination_directory_path)
@@ -386,7 +400,13 @@ class AsyncStraicoClient:
             raise Exception("Destination path is not a directory")
 
         image_details = await self.image_generation(
-            model, description, size, variations, seed=seed
+            model,
+            description,
+            size,
+            variations,
+            seed=seed,
+            should_enhance_description=should_enhance_description,
+            enhancement_instruction=enhancement_instruction,
         )
 
         image_urls = image_details["images"]

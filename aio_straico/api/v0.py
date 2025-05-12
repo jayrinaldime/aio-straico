@@ -251,6 +251,8 @@ async def aio_image_generation(
     size: ImageSize | str,
     variations: int,
     seed: int = None,
+    should_enhance_description: bool = False,
+    enhancement_instruction: str = None,
     **settings,
 ):
     url = f"{base_url}/v0/image/generation"
@@ -277,6 +279,13 @@ async def aio_image_generation(
 
     if seed is not None:
         json_body["seed"] = seed
+
+    if should_enhance_description:
+        json_body["enhance"] = should_enhance_description
+
+    if enhancement_instruction is not None:
+        json_body["enhance"] = True
+        json_body["customEnhancer"] = enhancement_instruction.strip()
 
     if "timeout" not in settings:
         settings["timeout"] = 300
@@ -318,6 +327,8 @@ def image_generation(
     size: ImageSize | str,
     variations: int,
     seed: int = None,
+    should_enhance_description: bool = False,
+    enhancement_instruction: str = None,
     **settings,
 ):
     url = f"{base_url}/v0/image/generation"
@@ -343,6 +354,13 @@ def image_generation(
     }
     if seed is not None:
         json_body["seed"] = seed
+
+    if should_enhance_description:
+        json_body["enhance"] = should_enhance_description
+
+    if enhancement_instruction is not None:
+        json_body["enhance"] = True
+        json_body["customEnhancer"] = enhancement_instruction.strip()
 
     if "timeout" not in settings:
         settings["timeout"] = 300
