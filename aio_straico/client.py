@@ -128,6 +128,7 @@ class StraicoClient:
         temperature: float = None,
         max_tokens: float = None,
         display_transcripts=False,
+        replace_failed_models: bool = False,
         raw_output=False,
     ):
         model_type = type(model)
@@ -178,6 +179,7 @@ class StraicoClient:
                 message,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                replace_failed_models=replace_failed_models,
                 **self._client_settings,
             )
         elif v == 1:
@@ -235,6 +237,7 @@ class StraicoClient:
                 display_transcripts=display_transcripts,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                replace_failed_models=replace_failed_models,
                 **self._client_settings,
             )
         if response.status_code == 201 and response.json()["success"]:

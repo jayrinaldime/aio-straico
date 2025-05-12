@@ -8,7 +8,7 @@ class _PricingMethod(Enum):
     budget = "budget"
 
 
-@dataclass(frozen=True)
+@dataclass()
 class ModelSelector:
     pricing_method: _PricingMethod
     quantity: int = 1
@@ -44,6 +44,5 @@ if __name__ == "__main__":
     print(models.pricing_method.value)
     print(models.quantity)
 
-    # will raise error
-    # models.quantity = 5
-    # print(models.quantity)
+    models.quantity = 3
+    print(models.quantity)

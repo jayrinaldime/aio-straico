@@ -29,6 +29,7 @@ async def aio_prompt_completion(
     display_transcripts=False,
     temperature: float = None,
     max_tokens: float = None,
+    replace_failed_models: bool = False,
     **settings,
 ):
     model_type = type(models)
@@ -68,6 +69,10 @@ async def aio_prompt_completion(
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
+
+    if replace_failed_models:
+        json_body["replace_failed_models"] = replace_failed_models
+
     if TRACING_ENABLED:
         tracing = dict(json_body)
         if "models" in tracing:
@@ -128,6 +133,7 @@ def prompt_completion(
     display_transcripts=False,
     temperature: float = None,
     max_tokens: float = None,
+    replace_failed_models: bool = False,
     **settings,
 ):
     model_type = type(models)
@@ -167,6 +173,10 @@ def prompt_completion(
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
+
+    if replace_failed_models:
+        json_body["replace_failed_models"] = replace_failed_models
+
     if TRACING_ENABLED:
         tracing = dict(json_body)
         if "models" in tracing:

@@ -36,6 +36,7 @@ async def aio_prompt_completion(
     message,
     temperature: float = None,
     max_tokens: float = None,
+    replace_failed_models: bool = False,
     **settings,
 ):
     url = f"{base_url}/v0/prompt/completion"
@@ -57,6 +58,8 @@ async def aio_prompt_completion(
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
+    if replace_failed_models:
+        json_body["replace_failed_models"] = replace_failed_models
 
     if TRACING_ENABLED:
         tracing = dict(json_body)
@@ -111,6 +114,7 @@ def prompt_completion(
     message,
     temperature: float = None,
     max_tokens: float = None,
+    replace_failed_models: bool = False,
     **settings,
 ):
     url = f"{base_url}/v0/prompt/completion"
@@ -132,6 +136,10 @@ def prompt_completion(
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
+
+    if replace_failed_models:
+        json_body["replace_failed_models"] = replace_failed_models
+
     if TRACING_ENABLED:
         tracing = dict(json_body)
         if "model" in tracing:

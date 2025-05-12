@@ -8,9 +8,11 @@ def auto_chat_v0():
             "Tell me a joke",
             temperature=2.0,
             max_tokens=100,
+            replace_failed_models=True,
         )
         if reply is None:
             print("Could not process request")
+            return
         print(reply["completion"]["choices"][0]["message"]["content"])
 
 
@@ -21,6 +23,7 @@ def auto_chat_v1():
             "Tell me a joke",
             temperature=2.0,
             max_tokens=100,
+            replace_failed_models=True,
         )
         if reply is None:
             print("Could not process request")
