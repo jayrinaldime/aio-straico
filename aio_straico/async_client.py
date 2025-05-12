@@ -10,6 +10,7 @@ from .api.v0 import aio_prompt_completion as aio_prompt_completion0
 from .api.v1 import aio_prompt_completion as aio_prompt_completion1
 from .api.v0 import aio_file_upload
 from .api.v0 import aio_image_generation, ImageSize
+from .api.smartllmselector import ModelSelector
 from httpx import RemoteProtocolError
 from pathlib import Path
 from .utils.models_to_enum import Model
@@ -129,11 +130,12 @@ class AsyncStraicoClient:
         display_transcripts=False,
         raw_output=False,
     ):
-
-        if type(model) == dict and "model" in model:
+        model_type = type(model)
+        if model_type == dict and "model" in model:
             model = model["model"]
-        elif type(model) == Model:
+        elif model_type == Model:
             model = model.model
+        model_type = type(model)
         v = None
         if len(files) > 0 or len(youtube_urls) > 0 or len(images) > 0:
             if is_listable_not_string(files) and len(files) > 4:
@@ -150,7 +152,7 @@ class AsyncStraicoClient:
                 )
             v = 1
         if v is None:
-            if isinstance(model, tuple) or isinstance(model, list):
+            if model_type == tuple or model_type == list:
                 v = 1
                 new_model = []
                 for m in model:
@@ -161,6 +163,8 @@ class AsyncStraicoClient:
                     else:
                         new_model.append(m)
                 model = new_model
+            elif model_type == ModelSelector and model.quantity > 1:
+                v = 1
             else:
                 v = 0
 

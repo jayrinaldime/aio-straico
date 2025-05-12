@@ -29,6 +29,7 @@ from .api.v0_rag import (
     rag_delete as api_rag_delete,
     rag_prompt_completion as api_rag_prompt_completion,
 )
+from .api.smartllmselector import ModelSelector
 from httpx import RemoteProtocolError
 from pathlib import Path
 from .utils.models_to_enum import Model
@@ -129,11 +130,12 @@ class StraicoClient:
         display_transcripts=False,
         raw_output=False,
     ):
-
-        if type(model) == dict and "model" in model:
+        model_type = type(model)
+        if model_type == dict and "model" in model:
             model = model["model"]
-        elif type(model) == Model:
+        elif model_type == Model:
             model = model.model
+        model_type = type(model)
         v = None
         if len(files) > 0 or len(youtube_urls) > 0 or len(images) > 0:
             if is_listable_not_string(files) and len(files) > 4:
@@ -151,7 +153,7 @@ class StraicoClient:
             v = 1
 
         if v is None:
-            if isinstance(model, list) or isinstance(model, tuple):
+            if model_type == tuple or model_type == list:
                 v = 1
                 new_model = []
                 for m in model:
@@ -162,6 +164,8 @@ class StraicoClient:
                     else:
                         new_model.append(m)
                 model = new_model
+            elif model_type == ModelSelector and model.quantity > 1:
+                v = 1
             else:
                 v = 0
 
