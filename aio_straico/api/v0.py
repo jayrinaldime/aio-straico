@@ -1,5 +1,6 @@
 from enum import Enum
 from ..utils.tracing import observe, tracing_context, TRACING_ENABLED
+from .smartllmselector import ModelSelector
 
 
 async def aio_user(session, base_url: str, headers: dict, **settings):
@@ -31,14 +32,20 @@ async def aio_prompt_completion(
     session,
     base_url: str,
     headers: dict,
-    model: str,
+    model: [str | ModelSelector],
     message,
     temperature: float = None,
     max_tokens: float = None,
+    replace_failed_models: bool = False,
     **settings,
 ):
     url = f"{base_url}/v0/prompt/completion"
-    json_body = {"model": model, "message": message}
+    json_body = {"message": message}
+
+    if isinstance(model, ModelSelector):
+        json_body["smart_llm_selector"] = model.pricing_method.value
+    else:
+        json_body["model"] = model
 
     if "timeout" not in settings:
         settings["timeout"] = 60
@@ -51,14 +58,25 @@ async def aio_prompt_completion(
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
+    if replace_failed_models:
+        json_body["replace_failed_models"] = replace_failed_models
+
     if TRACING_ENABLED:
         tracing = dict(json_body)
-        del tracing["model"]
+        if "model" in tracing:
+            del tracing["model"]
+        if "smart_llm_selector" in tracing:
+            del tracing["smart_llm_selector"]
         del tracing["message"]
         tracing.update(settings)
-        tracing_context.update_current_observation(
-            input=message, model=model, model_parameters=tracing
-        )
+        if "model" in tracing:
+            tracing_context.update_current_observation(
+                input=message, model=model, model_parameters=tracing
+            )
+        else:
+            tracing_context.update_current_observation(
+                input=message, model_parameters=tracing
+            )
     response = await session.post(url, headers=headers, json=json_body, **settings)
     if TRACING_ENABLED:
         if response.status_code == 201 and response.json()["success"]:
@@ -92,14 +110,20 @@ def prompt_completion(
     session,
     base_url: str,
     headers: dict,
-    model: str,
+    model: [str | ModelSelector],
     message,
     temperature: float = None,
     max_tokens: float = None,
+    replace_failed_models: bool = False,
     **settings,
 ):
     url = f"{base_url}/v0/prompt/completion"
-    json_body = {"model": model, "message": message}
+    json_body = {"message": message}
+
+    if isinstance(model, ModelSelector):
+        json_body["smart_llm_selector"] = model.pricing_method.value
+    else:
+        json_body["model"] = model
 
     if "timeout" not in settings:
         settings["timeout"] = 60
@@ -112,14 +136,26 @@ def prompt_completion(
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
+
+    if replace_failed_models:
+        json_body["replace_failed_models"] = replace_failed_models
+
     if TRACING_ENABLED:
         tracing = dict(json_body)
-        del tracing["model"]
+        if "model" in tracing:
+            del tracing["model"]
+        if "smart_llm_selector" in tracing:
+            del tracing["smart_llm_selector"]
         del tracing["message"]
         tracing.update(settings)
-        tracing_context.update_current_observation(
-            input=message, model=model, model_parameters=tracing
-        )
+        if "model" in tracing:
+            tracing_context.update_current_observation(
+                input=message, model=model, model_parameters=tracing
+            )
+        else:
+            tracing_context.update_current_observation(
+                input=message, model_parameters=tracing
+            )
     response = session.post(url, headers=headers, json=json_body, **settings)
     if TRACING_ENABLED:
         if response.status_code == 201 and response.json()["success"]:
@@ -215,6 +251,8 @@ async def aio_image_generation(
     size: ImageSize | str,
     variations: int,
     seed: int = None,
+    should_enhance_description: bool = False,
+    enhancement_instruction: str = None,
     **settings,
 ):
     url = f"{base_url}/v0/image/generation"
@@ -241,6 +279,13 @@ async def aio_image_generation(
 
     if seed is not None:
         json_body["seed"] = seed
+
+    if should_enhance_description:
+        json_body["enhance"] = should_enhance_description
+
+    if enhancement_instruction is not None:
+        json_body["enhance"] = True
+        json_body["customEnhancer"] = enhancement_instruction.strip()
 
     if "timeout" not in settings:
         settings["timeout"] = 300
@@ -282,6 +327,8 @@ def image_generation(
     size: ImageSize | str,
     variations: int,
     seed: int = None,
+    should_enhance_description: bool = False,
+    enhancement_instruction: str = None,
     **settings,
 ):
     url = f"{base_url}/v0/image/generation"
@@ -307,6 +354,13 @@ def image_generation(
     }
     if seed is not None:
         json_body["seed"] = seed
+
+    if should_enhance_description:
+        json_body["enhance"] = should_enhance_description
+
+    if enhancement_instruction is not None:
+        json_body["enhance"] = True
+        json_body["customEnhancer"] = enhancement_instruction.strip()
 
     if "timeout" not in settings:
         settings["timeout"] = 300

@@ -29,6 +29,7 @@ from .api.v0_rag import (
     rag_delete as api_rag_delete,
     rag_prompt_completion as api_rag_prompt_completion,
 )
+from .api.smartllmselector import ModelSelector
 from httpx import RemoteProtocolError
 from pathlib import Path
 from .utils.models_to_enum import Model
@@ -127,13 +128,15 @@ class StraicoClient:
         temperature: float = None,
         max_tokens: float = None,
         display_transcripts=False,
+        replace_failed_models: bool = False,
         raw_output=False,
     ):
-
-        if type(model) == dict and "model" in model:
+        model_type = type(model)
+        if model_type == dict and "model" in model:
             model = model["model"]
-        elif type(model) == Model:
+        elif model_type == Model:
             model = model.model
+        model_type = type(model)
         v = None
         if len(files) > 0 or len(youtube_urls) > 0 or len(images) > 0:
             if is_listable_not_string(files) and len(files) > 4:
@@ -151,7 +154,7 @@ class StraicoClient:
             v = 1
 
         if v is None:
-            if isinstance(model, list) or isinstance(model, tuple):
+            if model_type == tuple or model_type == list:
                 v = 1
                 new_model = []
                 for m in model:
@@ -162,6 +165,8 @@ class StraicoClient:
                     else:
                         new_model.append(m)
                 model = new_model
+            elif model_type == ModelSelector and model.quantity > 1:
+                v = 1
             else:
                 v = 0
 
@@ -174,6 +179,7 @@ class StraicoClient:
                 message,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                replace_failed_models=replace_failed_models,
                 **self._client_settings,
             )
         elif v == 1:
@@ -231,6 +237,7 @@ class StraicoClient:
                 display_transcripts=display_transcripts,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                replace_failed_models=replace_failed_models,
                 **self._client_settings,
             )
         if response.status_code == 201 and response.json()["success"]:
@@ -326,6 +333,8 @@ class StraicoClient:
         size: ImageSize | str,
         variations: int,
         seed: int = None,
+        should_enhance_description: bool = False,
+        enhancement_instruction: str = None,
     ):
         if type(model) == dict and "model" in model:
             model = model["model"]
@@ -341,6 +350,8 @@ class StraicoClient:
             size=size,
             variations=variations,
             seed=seed,
+            should_enhance_description=should_enhance_description,
+            enhancement_instruction=enhancement_instruction,
             **self._client_settings,
         )
         if response.status_code == 201 and response.json()["success"]:
@@ -354,12 +365,20 @@ class StraicoClient:
         variations: int,
         destination_zip_path: Path | str,
         seed: int = None,
+        should_enhance_description: bool = False,
+        enhancement_instruction: str = None,
     ) -> Path:
         if type(destination_zip_path) == str:
             destination_zip_path = Path(destination_zip_path)
 
         image_details = self.image_generation(
-            model, description, size, variations, seed=seed
+            model,
+            description,
+            size,
+            variations,
+            seed=seed,
+            should_enhance_description=should_enhance_description,
+            enhancement_instruction=enhancement_instruction,
         )
 
         zip_url = image_details["zip"]
@@ -384,6 +403,8 @@ class StraicoClient:
         variations: int,
         destination_directory_path: Path | str,
         seed: int = None,
+        should_enhance_description: bool = False,
+        enhancement_instruction: str = None,
     ) -> [Path]:
         if type(destination_directory_path) == str:
             destination_directory_path = Path(destination_directory_path)
@@ -392,7 +413,13 @@ class StraicoClient:
             raise Exception("Destination path is not a directory")
 
         image_details = self.image_generation(
-            model, description, size, variations, seed=seed
+            model,
+            description,
+            size,
+            variations,
+            seed=seed,
+            should_enhance_description=should_enhance_description,
+            enhancement_instruction=enhancement_instruction,
         )
 
         image_urls = image_details["images"]

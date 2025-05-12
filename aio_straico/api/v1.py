@@ -1,4 +1,6 @@
 from ..utils.tracing import observe, tracing_context, TRACING_ENABLED
+from .smartllmselector import ModelSelector
+from typing import List
 
 
 async def aio_models(session, base_url: str, headers: dict, **settings):
@@ -18,7 +20,7 @@ async def aio_prompt_completion(
     session,
     base_url: str,
     headers: dict,
-    models,
+    models: [str | ModelSelector | List[str]],
     message,
     *,
     file_urls=[],
@@ -27,13 +29,22 @@ async def aio_prompt_completion(
     display_transcripts=False,
     temperature: float = None,
     max_tokens: float = None,
+    replace_failed_models: bool = False,
     **settings,
 ):
-    if isinstance(models, str):
+    model_type = type(models)
+    if model_type == str:
         models = [models]
 
     url = f"{base_url}/v1/prompt/completion"
-    json_body = {"models": models, "message": message}
+    json_body = {"message": message}
+    if model_type == ModelSelector:
+        json_body["smart_llm_selector"] = {
+            "pricing_method": models.pricing_method.value,
+            "quantity": models.quantity,
+        }
+    else:
+        json_body["models"] = models
 
     if 0 < len(file_urls) <= 4:
         json_body["file_urls"] = file_urls
@@ -58,14 +69,28 @@ async def aio_prompt_completion(
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
+
+    if replace_failed_models:
+        json_body["replace_failed_models"] = replace_failed_models
+
     if TRACING_ENABLED:
         tracing = dict(json_body)
-        del tracing["models"]
+        if "models" in tracing:
+            del tracing["models"]
+
+        if "smart_llm_selector" in tracing:
+            del tracing["smart_llm_selector"]
+
         del tracing["message"]
         tracing.update(settings)
-        tracing_context.update_current_observation(
-            input=message, model=", ".join(models), model_parameters=tracing
-        )
+        if "models" in tracing:
+            tracing_context.update_current_observation(
+                input=message, model=", ".join(models), model_parameters=tracing
+            )
+        else:
+            tracing_context.update_current_observation(
+                input=message, model_parameters=tracing
+            )
     response = await session.post(url, headers=headers, json=json_body, **settings)
     if TRACING_ENABLED:
         if response.status_code == 201 and response.json()["success"]:
@@ -87,7 +112,6 @@ async def aio_prompt_completion(
                 metadata=meta,
                 status_message=str(response.status_code),
             )
-
         else:
             tracing_context.update_current_observation(
                 output=response.text, status_message=str(response.status_code)
@@ -100,7 +124,7 @@ def prompt_completion(
     session,
     base_url: str,
     headers: dict,
-    models,
+    models: [str | ModelSelector | List[str]],
     message,
     *,
     file_urls=[],
@@ -109,13 +133,22 @@ def prompt_completion(
     display_transcripts=False,
     temperature: float = None,
     max_tokens: float = None,
+    replace_failed_models: bool = False,
     **settings,
 ):
-    if isinstance(models, str):
+    model_type = type(models)
+    if model_type == str:
         models = [models]
 
     url = f"{base_url}/v1/prompt/completion"
-    json_body = {"models": models, "message": message}
+    json_body = {"message": message}
+    if model_type == ModelSelector:
+        json_body["smart_llm_selector"] = {
+            "pricing_method": models.pricing_method.value,
+            "quantity": models.quantity,
+        }
+    else:
+        json_body["models"] = models
 
     if 0 < len(file_urls) <= 4:
         json_body["file_urls"] = file_urls
@@ -140,14 +173,28 @@ def prompt_completion(
         max_tokens = max(max_tokens, 0)
         if max_tokens > 0:
             json_body["max_tokens"] = max_tokens
+
+    if replace_failed_models:
+        json_body["replace_failed_models"] = replace_failed_models
+
     if TRACING_ENABLED:
         tracing = dict(json_body)
-        del tracing["models"]
+        if "models" in tracing:
+            del tracing["models"]
+
+        if "smart_llm_selector" in tracing:
+            del tracing["smart_llm_selector"]
+
         del tracing["message"]
         tracing.update(settings)
-        tracing_context.update_current_observation(
-            input=message, model=", ".join(models), model_parameters=tracing
-        )
+        if "models" in tracing:
+            tracing_context.update_current_observation(
+                input=message, model=", ".join(models), model_parameters=tracing
+            )
+        else:
+            tracing_context.update_current_observation(
+                input=message, model_parameters=tracing
+            )
     response = session.post(url, headers=headers, json=json_body, **settings)
     if TRACING_ENABLED:
         if response.status_code == 201 and response.json()["success"]:
