@@ -17,8 +17,7 @@ https://documenter.getpostman.com/view/5900072/2s9YyzddrR
 
 ### Basic Prompt Completion 
 ```python
-from aio_straico import straico_client
-from aio_straico.utils import cheapest_model 
+from aio_straico import straico_client, ModelSelector
 
 def main():
     with straico_client(API_KEY="ko-11111111111111111111111111") as client:
@@ -31,18 +30,8 @@ def main():
           'plan': 'License Tier 1'}
         """
         
-        models = client.models()
-        cheapest_chat_model = cheapest_model(models)
-        print(cheapest_chat_model)
-        """
-        {'name': 'Google: Gemma 2 27B',  
-         'model': 'google/gemma-2-27b-it',
-         'word_limit': 3072,
-         'pricing': {'coins': 0.4, 
-                     'words': 100}}
-        """
-        
-        reply = client.prompt_completion(cheapest_chat_model, "Hello there")
+        reply = client.prompt_completion(ModelSelector.budget(), 
+                                         "Hello there")
         print(reply["completion"]["choices"][0]["message"]["content"])
         """
         General Kenobi! 👋 
