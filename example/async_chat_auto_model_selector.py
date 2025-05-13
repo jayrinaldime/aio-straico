@@ -20,7 +20,7 @@ async def async_auto_chat_v0():
 async def async_auto_chat_v1():
     async with aio_straico_client() as client:
         reply = await client.prompt_completion(
-            ModelSelector.balance(4),
+            ModelSelector.budget(4),
             "Tell me a joke",
             temperature=2.0,
             max_tokens=100,
@@ -41,4 +41,5 @@ async def async_auto_chat_v1():
 
 if __name__ == "__main__":
     asyncio.run(async_auto_chat_v0())
+    #asyncio.run(async_auto_chat_v0())
     asyncio.run(async_auto_chat_v1())
