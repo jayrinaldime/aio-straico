@@ -30,7 +30,7 @@ from .api.v0_rag import (
     rag_prompt_completion as api_rag_prompt_completion,
 )
 from .api.smartllmselector import ModelSelector
-from httpx import RemoteProtocolError
+from httpx import RemoteProtocolError, TimeoutException
 from pathlib import Path
 from .utils.models_to_enum import Model
 from .utils import is_listable_not_string
@@ -41,12 +41,14 @@ from .client_rag import StraicoRAG
 def retry_on_disconnect(func):
     @wraps(func)
     def retry_func(self, *args, **kwargs):
-        for i in range(1):
+        for i in range(self.REQUEST_RETRY_COUNT):
             try:
                 r = func(self, *args, **kwargs)
                 return r
+            except TimeoutError as e:
+                raise e
             except RemoteProtocolError as e:
-                print("REconnect")
+                print("Reconnect")
                 self._reconnect()
 
     return retry_func
@@ -54,7 +56,11 @@ def retry_on_disconnect(func):
 
 class StraicoClient:
     def __init__(
-        self, API_KEY: str = None, STRAICO_BASE_URL: str = None, **settings: dict
+        self,
+        API_KEY: str = None,
+        STRAICO_BASE_URL: str = None,
+        STRAICO_REQUEST_RETRY_COUNT: int = None,
+        **settings: dict,
     ):
         self._client_settings = settings
 
@@ -70,8 +76,13 @@ class StraicoClient:
             STRAICO_BASE_URL = environ.get(
                 "STRAICO_BASE_URL", "https://api.straico.com"
             )
-
         self.BASE_URL = STRAICO_BASE_URL
+
+        if STRAICO_REQUEST_RETRY_COUNT is None:
+            STRAICO_REQUEST_RETRY_COUNT = int(
+                environ.get("STRAICO_REQUEST_RETRY_COUNT", "1")
+            )
+        self.REQUEST_RETRY_COUNT = STRAICO_REQUEST_RETRY_COUNT
 
         self._session = Client()
         self.__prepare_header()

@@ -2,7 +2,7 @@ from os import environ
 from contextlib import asynccontextmanager
 from functools import wraps
 from typing import List
-from httpx import AsyncClient
+from httpx import AsyncClient, TimeoutException
 from .api.v0 import aio_user
 from .api.v0 import aio_models as aio_model0
 from .api.v1 import aio_models as aio_model1
@@ -41,12 +41,14 @@ from .async_client_rag import AsyncStraicoRAG
 def aio_retry_on_disconnect(func):
     @wraps(func)
     async def retry_func(self, *args, **kwargs):
-        for i in range(1):
+        for i in range(self.REQUEST_RETRY_COUNT):
             try:
                 r = await func(self, *args, **kwargs)
                 return r
+            except TimeoutException as e:
+                raise e
             except RemoteProtocolError as e:
-                print("REconnect")
+                print("Reconnect")
                 await self._reconnect()
 
     return retry_func
@@ -54,7 +56,11 @@ def aio_retry_on_disconnect(func):
 
 class AsyncStraicoClient:
     def __init__(
-        self, API_KEY: str = None, STRAICO_BASE_URL: str = None, **settings: dict
+        self,
+        API_KEY: str = None,
+        STRAICO_BASE_URL: str = None,
+        STRAICO_REQUEST_RETRY_COUNT: int = None,
+        **settings: dict,
     ):
         self._client_settings = settings
 
@@ -72,6 +78,12 @@ class AsyncStraicoClient:
             )
 
         self.BASE_URL = STRAICO_BASE_URL
+
+        if STRAICO_REQUEST_RETRY_COUNT is None:
+            STRAICO_REQUEST_RETRY_COUNT = int(
+                environ.get("STRAICO_REQUEST_RETRY_COUNT", "1")
+            )
+        self.REQUEST_RETRY_COUNT = STRAICO_REQUEST_RETRY_COUNT
 
         self._session = AsyncClient()
         self.__prepare_header()
