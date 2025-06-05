@@ -36,6 +36,7 @@ from .api.v0_agent import (
 )
 from .async_client_agent import AsyncStraicoAgent
 from .async_client_rag import AsyncStraicoRAG
+from .straico_requests import StraicoRequest
 
 
 def aio_retry_on_disconnect(func):
@@ -60,9 +61,11 @@ class AsyncStraicoClient:
         API_KEY: str = None,
         STRAICO_BASE_URL: str = None,
         STRAICO_REQUEST_RETRY_COUNT: int = None,
+        on_request_failure_callback=None,
         **settings: dict,
     ):
         self._client_settings = settings
+        self._on_fail_callback = on_request_failure_callback
 
         if API_KEY is None:
             API_KEY = environ.get("STRAICO_API_KEY")
@@ -111,6 +114,8 @@ class AsyncStraicoClient:
         )
         if response.status_code == 200 and response.json()["success"]:
             return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.USER_INFORMATION, response)
 
     @aio_retry_on_disconnect
     async def models(self, v=1):
@@ -127,6 +132,8 @@ class AsyncStraicoClient:
 
         if response.status_code == 200 and response.json()["success"]:
             return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.MODELS_INFORMATION, response)
 
     @aio_retry_on_disconnect
     async def prompt_completion(
@@ -259,6 +266,8 @@ class AsyncStraicoClient:
                 return response.json()
             else:
                 return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.PROMPT_COMPLETION, response)
 
     @aio_retry_on_disconnect
     async def upload_file(self, file_to_upload: Path | str) -> str:
@@ -317,6 +326,8 @@ class AsyncStraicoClient:
         )
         if response.status_code == 201 and response.json()["success"]:
             return response.json()["data"]["url"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.FILE_UPLOAD, response)
 
     #################################
     # Image Generation API
@@ -352,6 +363,8 @@ class AsyncStraicoClient:
         )
         if response.status_code == 201 and response.json()["success"]:
             return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.IMAGE_GENERATION, response)
 
     async def image_generation_as_zipfile(
         self,
@@ -480,6 +493,8 @@ class AsyncStraicoClient:
         )
         if response.status_code == 201 and response.json()["success"]:
             return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.CREATE_RAG, response)
 
     @aio_retry_on_disconnect
     async def rags(self) -> str:
@@ -491,6 +506,8 @@ class AsyncStraicoClient:
         )
         if response.status_code == 200 and response.json()["success"]:
             return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.LIST_OF_RAGS, response)
 
     @aio_retry_on_disconnect
     async def rag(self, rag_id: str) -> str:
@@ -503,6 +520,8 @@ class AsyncStraicoClient:
         )
         if response.status_code == 200 and response.json()["success"]:
             return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.RAG_BY_ID, response)
 
     @aio_retry_on_disconnect
     async def rag_delete(self, rag_id: str) -> str:
@@ -515,6 +534,8 @@ class AsyncStraicoClient:
         )
         if response.status_code == 200 and response.json()["success"]:
             return response.json()
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.DELETE_RAG, response)
 
     @aio_retry_on_disconnect
     async def rag_prompt_completion(
@@ -550,6 +571,8 @@ class AsyncStraicoClient:
         )
         if response.status_code == 200 and response.json()["success"]:
             return response.json()["response"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.RAG_PROMPT_COMPLETION, response)
 
     #################################
     # RAG object factory methods
@@ -630,6 +653,8 @@ class AsyncStraicoClient:
                     rag = rag.data["_id"]
                 return await self.agent_add_rag(_agent["_id"], rag)
             return _agent
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.CREATE_AGENT, response)
 
     @aio_retry_on_disconnect
     async def agents(self, *, with_tag: str = None) -> str:
@@ -644,6 +669,8 @@ class AsyncStraicoClient:
             if with_tag is None:
                 return _agents
             return [agent for agent in _agents if with_tag in agent["tag"]]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.LIST_OF_AGENTS, response)
 
     @aio_retry_on_disconnect
     async def agent(self, agent_id: str) -> str:
@@ -656,6 +683,8 @@ class AsyncStraicoClient:
         )
         if response.status_code == 200 and response.json()["success"]:
             return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.AGENT_DETAILS, response)
 
     @aio_retry_on_disconnect
     async def agent_delete(self, agent_id: str) -> dict:
@@ -668,6 +697,8 @@ class AsyncStraicoClient:
         )
         if response.status_code == 200 and response.json()["success"]:
             return response.json()
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.DELETE_AGENT, response)
 
     @aio_retry_on_disconnect
     async def agent_add_rag(
@@ -690,6 +721,8 @@ class AsyncStraicoClient:
 
         if response.status_code == 200 and response.json()["success"]:
             return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.ADD_RAG_TO_AGENT, response)
 
     @aio_retry_on_disconnect
     async def agent_prompt_completion(
@@ -718,6 +751,8 @@ class AsyncStraicoClient:
         )
         if response.status_code == 200 and response.json()["success"]:
             return response.json()["response"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.AGENT_PROMPT_COMPLETION, response)
 
     @aio_retry_on_disconnect
     async def agent_update(
@@ -759,6 +794,8 @@ class AsyncStraicoClient:
         )
         if response.status_code == 200 and response.json()["success"]:
             return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.UPDATE_AGENT, response)
 
     #################################
     # Agent object factory methods
@@ -794,11 +831,17 @@ class AsyncStraicoClient:
 
 @asynccontextmanager
 async def aio_straico_client(
-    API_KEY: str = None, STRAICO_BASE_URL: str = None, **settings: dict
+    API_KEY: str = None,
+    STRAICO_BASE_URL: str = None,
+    on_request_failure_callback=None,
+    **settings: dict,
 ):
     try:
         client = AsyncStraicoClient(
-            API_KEY=API_KEY, STRAICO_BASE_URL=STRAICO_BASE_URL, **settings
+            API_KEY=API_KEY,
+            STRAICO_BASE_URL=STRAICO_BASE_URL,
+            on_request_failure_callback=on_request_failure_callback,
+            **settings,
         )
         yield client
     finally:
