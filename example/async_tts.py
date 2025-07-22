@@ -20,6 +20,24 @@ async def async_tts_elevenlabs():
         )
         pprint(tts)
 
+async def async_tts_as_zip():
+    async with aio_straico_client() as client:
+        tts_zip_path = await client.tts_as_zipfile(
+            TTSModel.eleven_multilingual_v2,
+            "9BWtsMINqrJLrRacOk9x",
+            text="Hello world from eleven labs",
+            destination_zip_path="./Audio"
+        )
+        print(tts_zip_path)
 
+async def async_tts_as_audio():
+    async with aio_straico_client() as client:
+        tts_zip_path = await client.tts_as_audio(
+            TTSModel.eleven_multilingual_v2,
+            "9BWtsMINqrJLrRacOk9x",
+            text="Hello world from eleven labs",
+            destination_directory_path="./Audio"
+        )
+        print(tts_zip_path)
 if __name__ == "__main__":
-    asyncio.run(async_tts_elevenlabs())
+    asyncio.run(async_tts_as_zip())

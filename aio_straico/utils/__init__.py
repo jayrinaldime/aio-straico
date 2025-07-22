@@ -11,6 +11,7 @@ from .transcript_utils import (
     youtube_trasncript_to_plain_text,
 )
 
+from .asset_utils import aio_download_asset
 from .models_to_enum import to_model_enum
 
 

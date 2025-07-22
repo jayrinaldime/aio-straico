@@ -1,3 +1,4 @@
+import asyncio
 from os import environ
 from contextlib import asynccontextmanager
 from functools import wraps
@@ -14,7 +15,7 @@ from .api.smartllmselector import ModelSelector
 from httpx import RemoteProtocolError
 from pathlib import Path
 from .utils.models_to_enum import Model
-from .utils import is_listable_not_string
+from .utils import is_listable_not_string, aio_download_asset
 from .api.v0_rag import (
     ChunkingMethod,
     BreakpointThresholdType,
@@ -392,17 +393,8 @@ class AsyncStraicoClient:
         )
 
         zip_url = image_details["zip"]
-
-        response = await self._session.get(zip_url, **self._client_settings)
-        content = response.read()
-
-        if destination_zip_path.is_dir():
-            zip_name = zip_url.split("/")[-1]
-            destination_zip_path = destination_zip_path / zip_name
-
-        with destination_zip_path.open("wb") as file_writer:
-            file_writer.write(content)
-
+        destination_zip_path = await aio_download_asset(self._session, zip_url, destination_zip_path,
+                                                          **self._client_settings)
         return destination_zip_path
 
     async def aclose(self):
@@ -423,7 +415,7 @@ class AsyncStraicoClient:
             destination_directory_path = Path(destination_directory_path)
 
         if not destination_directory_path.is_dir():
-            raise Exception("Destination path is not a directory")
+            raise NotADirectoryError("Destination path is not a directory")
 
         image_details = await self.image_generation(
             model,
@@ -438,15 +430,8 @@ class AsyncStraicoClient:
         image_urls = image_details["images"]
         image_paths = []
         for image_url in image_urls:
-            response = await self._session.get(image_url, **self._client_settings)
-            content = response.read()
-
-            image_name = image_url.split("/")[-1]
-            destination_image_path = destination_directory_path / image_name
-
-            with destination_image_path.open("wb") as file_writer:
-                file_writer.write(content)
-
+            destination_image_path = await aio_download_asset(self._session, image_url, destination_directory_path,
+                                                            **self._client_settings)
             image_paths.append(destination_image_path)
 
         return image_paths
@@ -885,6 +870,44 @@ class AsyncStraicoClient:
             return response.json()["data"]
         elif self._on_fail_callback is not None:
             self._on_fail_callback(StraicoRequest.TTS_CREATE_TTS, response)
+
+    async def tts_as_zipfile(self, ttsmodel: [TTSModel | str], voice_id: [TTS1Voices | str], text: str, destination_zip_path: Path | str) -> Path:
+        if type(destination_zip_path) == str:
+            destination_zip_path = Path(destination_zip_path)
+
+        tts = await self.tts(
+            ttsmodel,
+            voice_id,
+            text
+        )
+
+        zip_url = tts["zip"]
+        destination_zip_path = await aio_download_asset(self._session, zip_url, destination_zip_path,
+                                                          **self._client_settings)
+        return destination_zip_path
+
+
+    async def tts_as_audio(
+        self,
+        ttsmodel: [TTSModel | str], voice_id: [TTS1Voices | str], text: str,
+        destination_directory_path: Path | str,
+    ) -> [Path]:
+        if type(destination_directory_path) == str:
+            destination_directory_path = Path(destination_directory_path)
+
+        if not destination_directory_path.is_dir():
+            raise Exception("Destination path is not a directory")
+
+        tts = await self.tts(
+            ttsmodel,
+            voice_id,
+            text
+        )
+
+        audio_url = tts["audio"]
+        destination_audio_path = await aio_download_asset(self._session, audio_url, destination_directory_path,  **self._client_settings)
+
+        return destination_audio_path
 
 
 @asynccontextmanager
