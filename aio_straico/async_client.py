@@ -14,7 +14,7 @@ from .api.v0 import aio_image_generation, ImageSize
 from .api.smartllmselector import ModelSelector
 from httpx import RemoteProtocolError
 from pathlib import Path
-from .utils.models_to_enum import Model
+from .utils.models_to_enum import Model, VoiceModel
 from .utils import is_listable_not_string, aio_download_asset
 from .api.v0_rag import (
     ChunkingMethod,
@@ -393,8 +393,9 @@ class AsyncStraicoClient:
         )
 
         zip_url = image_details["zip"]
-        destination_zip_path = await aio_download_asset(self._session, zip_url, destination_zip_path,
-                                                          **self._client_settings)
+        destination_zip_path = await aio_download_asset(
+            self._session, zip_url, destination_zip_path, **self._client_settings
+        )
         return destination_zip_path
 
     async def aclose(self):
@@ -430,8 +431,12 @@ class AsyncStraicoClient:
         image_urls = image_details["images"]
         image_paths = []
         for image_url in image_urls:
-            destination_image_path = await aio_download_asset(self._session, image_url, destination_directory_path,
-                                                            **self._client_settings)
+            destination_image_path = await aio_download_asset(
+                self._session,
+                image_url,
+                destination_directory_path,
+                **self._client_settings,
+            )
             image_paths.append(destination_image_path)
 
         return image_paths
@@ -829,7 +834,10 @@ class AsyncStraicoClient:
 
     @aio_retry_on_disconnect
     async def tts(
-        self, ttsmodel: [TTSModel | str], voice_id: [TTS1Voices | str], text: str
+        self,
+        ttsmodel: [TTSModel | str],
+        voice_id: [TTS1Voices | VoiceModel | str],
+        text: str,
     ):
         if isinstance(ttsmodel, TTSModel):
             ttsmodel = ttsmodel.value
@@ -841,6 +849,11 @@ class AsyncStraicoClient:
             raise Exception(f"Unknown TTS model {ttsmodel}")
 
         if ttsmodel == TTSModel.tts_1.value:
+            if isinstance(voice_id, VoiceModel):
+                raise Exception(
+                    f"Invalid voice id {voice_id} for tts1, please use eleven_multilingual_v2"
+                )
+
             if isinstance(voice_id, TTS1Voices):
                 voice_id = voice_id.value
 
@@ -853,6 +866,10 @@ class AsyncStraicoClient:
                 TTS1Voices.shimmer.value,
             ):
                 raise Exception(f"Unknown voice id {voice_id} for model {ttsmodel}")
+        elif ttsmodel == TTSModel.eleven_multilingual_v2 and isinstance(
+            voice_id, VoiceModel
+        ):
+            voice_id = voice_id.voice_id
 
         if len(text) > 4000:
             raise Exception("text exceed 4000 characters")
@@ -871,25 +888,29 @@ class AsyncStraicoClient:
         elif self._on_fail_callback is not None:
             self._on_fail_callback(StraicoRequest.TTS_CREATE_TTS, response)
 
-    async def tts_as_zipfile(self, ttsmodel: [TTSModel | str], voice_id: [TTS1Voices | str], text: str, destination_zip_path: Path | str) -> Path:
+    async def tts_as_zipfile(
+        self,
+        ttsmodel: [TTSModel | str],
+        voice_id: [TTS1Voices | VoiceModel | str],
+        text: str,
+        destination_zip_path: Path | str,
+    ) -> Path:
         if type(destination_zip_path) == str:
             destination_zip_path = Path(destination_zip_path)
 
-        tts = await self.tts(
-            ttsmodel,
-            voice_id,
-            text
-        )
+        tts = await self.tts(ttsmodel, voice_id, text)
 
         zip_url = tts["zip"]
-        destination_zip_path = await aio_download_asset(self._session, zip_url, destination_zip_path,
-                                                          **self._client_settings)
+        destination_zip_path = await aio_download_asset(
+            self._session, zip_url, destination_zip_path, **self._client_settings
+        )
         return destination_zip_path
-
 
     async def tts_as_audio(
         self,
-        ttsmodel: [TTSModel | str], voice_id: [TTS1Voices | str], text: str,
+        ttsmodel: [TTSModel | str],
+        voice_id: [TTS1Voices | VoiceModel | str],
+        text: str,
         destination_directory_path: Path | str,
     ) -> [Path]:
         if type(destination_directory_path) == str:
@@ -898,14 +919,15 @@ class AsyncStraicoClient:
         if not destination_directory_path.is_dir():
             raise Exception("Destination path is not a directory")
 
-        tts = await self.tts(
-            ttsmodel,
-            voice_id,
-            text
-        )
+        tts = await self.tts(ttsmodel, voice_id, text)
 
         audio_url = tts["audio"]
-        destination_audio_path = await aio_download_asset(self._session, audio_url, destination_directory_path,  **self._client_settings)
+        destination_audio_path = await aio_download_asset(
+            self._session,
+            audio_url,
+            destination_directory_path,
+            **self._client_settings,
+        )
 
         return destination_audio_path
 

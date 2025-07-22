@@ -70,3 +70,27 @@ def to_model_enum(models):
         return chat_models, image_models
     else:  # v0
         return __to_enum_object(models)
+
+
+class VoiceModel:
+    def __init__(self, **properties):
+        self.voice_id = properties["voice_id"]
+        self.name = properties["name"]
+        self.properties = properties
+
+    def __getitem__(self, key):
+        return self.properties.get(key)
+
+    def __str__(self):
+        return self.voice_id
+
+    def __repr__(self):
+        return str(self.properties)
+
+
+def to_voices_enum(voices):
+    f = [(_python_name(m["name"]), m) for m in voices["voices"]]
+    namespace_enum = ModelProvider()
+    for name, value in f:
+        setattr(namespace_enum, name, VoiceModel(**value))
+    return namespace_enum
