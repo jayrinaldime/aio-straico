@@ -20,3 +20,5 @@ class StraicoRequest(Enum):
     UPDATE_RAG = "update_rag"  # NOT exist
     DELETE_RAG = "delete_rag"
     RAG_PROMPT_COMPLETION = "rag_prompt_completion"
+    TTS_ELEVENLABS_VOICES = "elevenlabs_voices"
+    TTS_CREATE_TTS = "create_tts"

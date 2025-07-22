@@ -34,6 +34,7 @@ from .api.v0_agent import (
     aio_agent_delete,
     aio_agent_update,
 )
+from .api.v1_tts import aio_elevenlabs_voices, aio_tts, TTSModel, TTS1Voices
 from .async_client_agent import AsyncStraicoAgent
 from .async_client_rag import AsyncStraicoRAG
 from .straico_requests import StraicoRequest
@@ -827,6 +828,63 @@ class AsyncStraicoClient:
             rag=rag,
         )
         return AsyncStraicoAgent(self, _agent)
+
+    #################################
+    # TTS API
+    ##############################
+    @aio_retry_on_disconnect
+    async def elevenlabs_voices(self):
+        response = await aio_elevenlabs_voices(
+            self._session, self.BASE_URL, self._header, **self._client_settings
+        )
+        if response.status_code == 201 and response.json()["success"]:
+            return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.TTS_ELEVENLABS_VOICES, response)
+
+    @aio_retry_on_disconnect
+    async def tts(
+        self, ttsmodel: [TTSModel | str], voice_id: [TTS1Voices | str], text: str
+    ):
+        if isinstance(ttsmodel, TTSModel):
+            ttsmodel = ttsmodel.value
+
+        if ttsmodel not in (
+            TTSModel.eleven_multilingual_v2.value,
+            TTSModel.tts_1.value,
+        ):
+            raise Exception(f"Unknown TTS model {ttsmodel}")
+
+        if ttsmodel == TTSModel.tts_1.value:
+            if isinstance(voice_id, TTS1Voices):
+                voice_id = voice_id.value
+
+            if voice_id not in (
+                TTS1Voices.echo.value,
+                TTS1Voices.nova.value,
+                TTS1Voices.onxy.value,
+                TTS1Voices.alloy.value,
+                TTS1Voices.fable.value,
+                TTS1Voices.shimmer.value,
+            ):
+                raise Exception(f"Unknown voice id {voice_id} for model {ttsmodel}")
+
+        if len(text) > 4000:
+            raise Exception("text exceed 4000 characters")
+
+        response = await aio_tts(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            ttsmodel,
+            text,
+            voice_id,
+            **self._client_settings,
+        )
+        if response.status_code == 201 and response.json()["success"]:
+            return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.TTS_CREATE_TTS, response)
 
 
 @asynccontextmanager
