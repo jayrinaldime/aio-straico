@@ -22,3 +22,4 @@ class StraicoRequest(Enum):
     RAG_PROMPT_COMPLETION = "rag_prompt_completion"
     TTS_ELEVENLABS_VOICES = "elevenlabs_voices"
     TTS_CREATE_TTS = "create_tts"
+    VIDEO_GENERATION = "image_to_video"

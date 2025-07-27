@@ -36,6 +36,7 @@ from .api.v0_agent import (
     aio_agent_update,
 )
 from .api.v1_tts import aio_elevenlabs_voices, aio_tts, TTSModel, TTS1Voices
+from .api.v1_image_to_video import ImageToVideoModel, VideoSize, aio_image_to_video
 from .async_client_agent import AsyncStraicoAgent
 from .async_client_rag import AsyncStraicoRAG
 from .straico_requests import StraicoRequest
@@ -925,6 +926,120 @@ class AsyncStraicoClient:
         destination_audio_path = await aio_download_asset(
             self._session,
             audio_url,
+            destination_directory_path,
+            **self._client_settings,
+        )
+
+        return destination_audio_path
+
+    #################################
+    # Image to Video API
+    ##############################
+    # ImageToVideoModel, VideoSize, aio_image_to_video
+    @aio_retry_on_disconnect
+    async def image_to_video(
+        self,
+        video_model: [ImageToVideoModel | str],
+        size: [VideoSize | str],
+        duration: int,
+        image: [Path | str],
+        description: str,
+    ):
+        if isinstance(video_model, ImageToVideoModel):
+            video_model = video_model.value
+
+        if video_model not in (
+            ImageToVideoModel.fal_ai_kling_video_v2_1.value,
+            ImageToVideoModel.fal_ai_veo2.value,
+            ImageToVideoModel.fal_ai_vidu_q1.value,
+            ImageToVideoModel.gen3a_turbo.value,
+            ImageToVideoModel.gen4_turbo.value,
+        ):
+            raise Exception(f"Unknown Image to Video model {video_model}")
+
+        if isinstance(size, VideoSize):
+            size = size.value
+
+        if size not in (
+            VideoSize.square.value,
+            VideoSize.landscape.value,
+            VideoSize.portrait.value,
+        ):
+            raise Exception(f"Unknown Size {size}")
+
+        image_url = None
+        if isinstance(image, str):
+            if image.lower().startswith("https"):
+                image_url = image
+            else:
+                image = Path(image)
+
+        if image_url is None and isinstance(image, Path):
+            if not image.exists() or not image.is_file():
+                raise FileNotFoundError(image)
+            image_url = await self.upload_file(image)
+
+        response = await aio_image_to_video(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            video_model,
+            description,
+            size,
+            duration,
+            image_url,
+            **self._client_settings,
+        )
+        if response.status_code == 201 and response.json()["success"]:
+            return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.VIDEO_GENERATION, response)
+
+    async def image_to_video_as_zipfile(
+        self,
+        video_model: [ImageToVideoModel | str],
+        size: [VideoSize | str],
+        duration: int,
+        image: [Path | str],
+        description: str,
+        destination_zip_path: Path | str,
+    ) -> Path:
+        if type(destination_zip_path) == str:
+            destination_zip_path = Path(destination_zip_path)
+
+        video = await self.image_to_video(
+            video_model, size, duration, image, description
+        )
+
+        zip_url = video["zip"]
+        destination_zip_path = await aio_download_asset(
+            self._session, zip_url, destination_zip_path, **self._client_settings
+        )
+        return destination_zip_path
+
+    async def image_to_video_as_file(
+        self,
+        video_model: [ImageToVideoModel | str],
+        size: [VideoSize | str],
+        duration: int,
+        image: [Path | str],
+        description: str,
+        destination_directory_path: Path | str,
+    ) -> [Path]:
+        if type(destination_directory_path) == str:
+            destination_directory_path = Path(destination_directory_path)
+
+        if not destination_directory_path.is_dir():
+            raise Exception("Destination path is not a directory")
+
+        video = await self.image_to_video(
+            video_model, size, duration, image, description
+        )
+
+        video_url = video["video"]
+        destination_audio_path = await aio_download_asset(
+            self._session,
+            video_url,
             destination_directory_path,
             **self._client_settings,
         )
