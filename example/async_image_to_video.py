@@ -5,7 +5,7 @@ from pprint import pprint
 
 
 async def async_main():
-    async with aio_straico_client() as client:
+    async with aio_straico_client(timeout=600) as client:
         tts = await client.image_to_video_as_file(
             ImageToVideoModel.gen3a_turbo,
             VideoSize.landscape,

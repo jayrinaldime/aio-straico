@@ -35,7 +35,7 @@ async def aio_image_to_video(
         "duration": duration,
         "image_url": image_url,
     }
-    response = await session.post(url, headers=headers, data=payload, **settings)
+    response = await session.post(url, headers=headers, json=payload, **settings)
     return response
 
 
