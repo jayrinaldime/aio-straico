@@ -1,3 +1,4 @@
+import asyncio
 from os import environ
 from contextlib import asynccontextmanager
 from functools import wraps
@@ -9,12 +10,13 @@ from .api.v1 import aio_models as aio_model1
 from .api.v0 import aio_prompt_completion as aio_prompt_completion0
 from .api.v1 import aio_prompt_completion as aio_prompt_completion1
 from .api.v0 import aio_file_upload
-from .api.v0 import aio_image_generation, ImageSize
+from .api.v0 import aio_image_generation as aio_image_generation0, ImageSize
+from .api.v1 import aio_image_generation as aio_image_generation1
 from .api.smartllmselector import ModelSelector
 from httpx import RemoteProtocolError
 from pathlib import Path
-from .utils.models_to_enum import Model
-from .utils import is_listable_not_string
+from .utils.models_to_enum import Model, VoiceModel
+from .utils import is_listable_not_string, aio_download_asset
 from .api.v0_rag import (
     ChunkingMethod,
     BreakpointThresholdType,
@@ -34,6 +36,8 @@ from .api.v0_agent import (
     aio_agent_delete,
     aio_agent_update,
 )
+from .api.v1_tts import aio_elevenlabs_voices, aio_tts, TTSModel, TTS1Voices
+from .api.v1_image_to_video import ImageToVideoModel, VideoSize, aio_image_to_video
 from .async_client_agent import AsyncStraicoAgent
 from .async_client_rag import AsyncStraicoRAG
 from .straico_requests import StraicoRequest
@@ -342,25 +346,47 @@ class AsyncStraicoClient:
         seed: int = None,
         should_enhance_description: bool = False,
         enhancement_instruction: str = None,
+        v=None,
     ):
-        if type(model) == dict and "model" in model:
+        if isinstance(model, dict) and "model" in model:
             model = model["model"]
-        elif type(model) == Model:
+        elif isinstance(model, Model):
             model = model.model
 
-        response = await aio_image_generation(
-            self._session,
-            self.BASE_URL,
-            self._header,
-            model=model,
-            description=description,
-            size=size,
-            variations=variations,
-            seed=seed,
-            should_enhance_description=should_enhance_description,
-            enhancement_instruction=enhancement_instruction,
-            **self._client_settings,
-        )
+        if v == 0 or model in (
+            "openai/dall-e-3",
+            "flux/1.1",
+            "ideogram/V_2A",
+            "ideogram/V_2A_TURBO",
+            "ideogram/V_2",
+            "ideogram/V_2_TURBO",
+            "ideogram/V_1",
+            "ideogram/V_1_TURBO",
+        ):
+            response = await aio_image_generation0(
+                self._session,
+                self.BASE_URL,
+                self._header,
+                model=model,
+                description=description,
+                size=size,
+                variations=variations,
+                seed=seed,
+                should_enhance_description=should_enhance_description,
+                enhancement_instruction=enhancement_instruction,
+                **self._client_settings,
+            )
+        else:
+            response = await aio_image_generation1(
+                self._session,
+                self.BASE_URL,
+                self._header,
+                model=model,
+                description=description,
+                size=size,
+                variations=variations,
+                **self._client_settings,
+            )
         if response.status_code == 201 and response.json()["success"]:
             return response.json()["data"]
         elif self._on_fail_callback is not None:
@@ -391,17 +417,9 @@ class AsyncStraicoClient:
         )
 
         zip_url = image_details["zip"]
-
-        response = await self._session.get(zip_url, **self._client_settings)
-        content = response.read()
-
-        if destination_zip_path.is_dir():
-            zip_name = zip_url.split("/")[-1]
-            destination_zip_path = destination_zip_path / zip_name
-
-        with destination_zip_path.open("wb") as file_writer:
-            file_writer.write(content)
-
+        destination_zip_path = await aio_download_asset(
+            self._session, zip_url, destination_zip_path, **self._client_settings
+        )
         return destination_zip_path
 
     async def aclose(self):
@@ -422,7 +440,7 @@ class AsyncStraicoClient:
             destination_directory_path = Path(destination_directory_path)
 
         if not destination_directory_path.is_dir():
-            raise Exception("Destination path is not a directory")
+            raise NotADirectoryError("Destination path is not a directory")
 
         image_details = await self.image_generation(
             model,
@@ -437,15 +455,12 @@ class AsyncStraicoClient:
         image_urls = image_details["images"]
         image_paths = []
         for image_url in image_urls:
-            response = await self._session.get(image_url, **self._client_settings)
-            content = response.read()
-
-            image_name = image_url.split("/")[-1]
-            destination_image_path = destination_directory_path / image_name
-
-            with destination_image_path.open("wb") as file_writer:
-                file_writer.write(content)
-
+            destination_image_path = await aio_download_asset(
+                self._session,
+                image_url,
+                destination_directory_path,
+                **self._client_settings,
+            )
             image_paths.append(destination_image_path)
 
         return image_paths
@@ -827,6 +842,231 @@ class AsyncStraicoClient:
             rag=rag,
         )
         return AsyncStraicoAgent(self, _agent)
+
+    #################################
+    # TTS API
+    ##############################
+    @aio_retry_on_disconnect
+    async def elevenlabs_voices(self):
+        response = await aio_elevenlabs_voices(
+            self._session, self.BASE_URL, self._header, **self._client_settings
+        )
+        if response.status_code == 201 and response.json()["success"]:
+            return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.TTS_ELEVENLABS_VOICES, response)
+
+    @aio_retry_on_disconnect
+    async def tts(
+        self,
+        ttsmodel: [TTSModel | str],
+        voice_id: [TTS1Voices | VoiceModel | str],
+        text: str,
+    ):
+        if isinstance(ttsmodel, TTSModel):
+            ttsmodel = ttsmodel.value
+
+        if ttsmodel not in (
+            TTSModel.eleven_multilingual_v2.value,
+            TTSModel.tts_1.value,
+        ):
+            raise Exception(f"Unknown TTS model {ttsmodel}")
+
+        if ttsmodel == TTSModel.tts_1.value:
+            if isinstance(voice_id, VoiceModel):
+                raise Exception(
+                    f"Invalid voice id {voice_id} for tts1, please use eleven_multilingual_v2"
+                )
+
+            if isinstance(voice_id, TTS1Voices):
+                voice_id = voice_id.value
+
+            if voice_id not in (
+                TTS1Voices.echo.value,
+                TTS1Voices.nova.value,
+                TTS1Voices.onxy.value,
+                TTS1Voices.alloy.value,
+                TTS1Voices.fable.value,
+                TTS1Voices.shimmer.value,
+            ):
+                raise Exception(f"Unknown voice id {voice_id} for model {ttsmodel}")
+        elif ttsmodel == TTSModel.eleven_multilingual_v2 and isinstance(
+            voice_id, VoiceModel
+        ):
+            voice_id = voice_id.voice_id
+
+        if len(text) > 4000:
+            raise Exception("text exceed 4000 characters")
+
+        response = await aio_tts(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            ttsmodel,
+            text,
+            voice_id,
+            **self._client_settings,
+        )
+        if response.status_code == 201 and response.json()["success"]:
+            return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.TTS_CREATE_TTS, response)
+
+    async def tts_as_zipfile(
+        self,
+        ttsmodel: [TTSModel | str],
+        voice_id: [TTS1Voices | VoiceModel | str],
+        text: str,
+        destination_zip_path: Path | str,
+    ) -> Path:
+        if type(destination_zip_path) == str:
+            destination_zip_path = Path(destination_zip_path)
+
+        tts = await self.tts(ttsmodel, voice_id, text)
+
+        zip_url = tts["zip"]
+        destination_zip_path = await aio_download_asset(
+            self._session, zip_url, destination_zip_path, **self._client_settings
+        )
+        return destination_zip_path
+
+    async def tts_as_audio(
+        self,
+        ttsmodel: [TTSModel | str],
+        voice_id: [TTS1Voices | VoiceModel | str],
+        text: str,
+        destination_directory_path: Path | str,
+    ) -> [Path]:
+        if type(destination_directory_path) == str:
+            destination_directory_path = Path(destination_directory_path)
+
+        if not destination_directory_path.is_dir():
+            raise Exception("Destination path is not a directory")
+
+        tts = await self.tts(ttsmodel, voice_id, text)
+
+        audio_url = tts["audio"]
+        destination_audio_path = await aio_download_asset(
+            self._session,
+            audio_url,
+            destination_directory_path,
+            **self._client_settings,
+        )
+
+        return destination_audio_path
+
+    #################################
+    # Image to Video API
+    ##############################
+    @aio_retry_on_disconnect
+    async def image_to_video(
+        self,
+        video_model: [ImageToVideoModel | str],
+        size: [VideoSize | str],
+        duration: int,
+        image: [Path | str],
+        description: str,
+    ):
+        if isinstance(video_model, ImageToVideoModel):
+            video_model = video_model.value
+
+        if video_model not in (
+            ImageToVideoModel.fal_ai_kling_video_v2_1.value,
+            ImageToVideoModel.fal_ai_veo2.value,
+            ImageToVideoModel.fal_ai_vidu_q1.value,
+            ImageToVideoModel.gen3a_turbo.value,
+            ImageToVideoModel.gen4_turbo.value,
+        ):
+            raise Exception(f"Unknown Image to Video model {video_model}")
+
+        if isinstance(size, VideoSize):
+            size = size.value
+
+        if size not in (
+            VideoSize.square.value,
+            VideoSize.landscape.value,
+            VideoSize.portrait.value,
+        ):
+            raise Exception(f"Unknown Size {size}")
+
+        image_url = None
+        if isinstance(image, str):
+            if image.lower().startswith("https"):
+                image_url = image
+            else:
+                image = Path(image)
+
+        if image_url is None and isinstance(image, Path):
+            if not image.exists() or not image.is_file():
+                raise FileNotFoundError(image)
+            image_url = await self.upload_file(image)
+
+        response = await aio_image_to_video(
+            self._session,
+            self.BASE_URL,
+            self._header,
+            video_model,
+            description,
+            size,
+            duration,
+            image_url,
+            **self._client_settings,
+        )
+        if response.status_code == 201 and response.json()["success"]:
+            return response.json()["data"]
+        elif self._on_fail_callback is not None:
+            self._on_fail_callback(StraicoRequest.VIDEO_GENERATION, response)
+
+    async def image_to_video_as_zipfile(
+        self,
+        video_model: [ImageToVideoModel | str],
+        size: [VideoSize | str],
+        duration: int,
+        image: [Path | str],
+        description: str,
+        destination_zip_path: Path | str,
+    ) -> Path:
+        if type(destination_zip_path) == str:
+            destination_zip_path = Path(destination_zip_path)
+
+        video = await self.image_to_video(
+            video_model, size, duration, image, description
+        )
+
+        zip_url = video["zip"]
+        destination_zip_path = await aio_download_asset(
+            self._session, zip_url, destination_zip_path, **self._client_settings
+        )
+        return destination_zip_path
+
+    async def image_to_video_as_file(
+        self,
+        video_model: [ImageToVideoModel | str],
+        size: [VideoSize | str],
+        duration: int,
+        image: [Path | str],
+        description: str,
+        destination_directory_path: Path | str,
+    ) -> [Path]:
+        if type(destination_directory_path) == str:
+            destination_directory_path = Path(destination_directory_path)
+
+        if not destination_directory_path.is_dir():
+            raise Exception("Destination path is not a directory")
+
+        video = await self.image_to_video(
+            video_model, size, duration, image, description
+        )
+
+        video_url = video["video"]
+        destination_audio_path = await aio_download_asset(
+            self._session,
+            video_url,
+            destination_directory_path,
+            **self._client_settings,
+        )
+
+        return destination_audio_path
 
 
 @asynccontextmanager

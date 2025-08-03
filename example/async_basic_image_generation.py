@@ -19,7 +19,7 @@ async def async_main():
         image_directory.mkdir(parents=True, exist_ok=True)
 
         image_paths = await client.image_generation_as_images(
-            model=image_models.ideogram.ideogram_v_2a,
+            model=image_models.openai.gpt_image_1_azure,
             description=PROMPT_DESCRIPTION,
             size=ImageSize.square,  # or ImageSize.portrait, ImageSize.landscape,
             variations=1,  # 1 to 4
@@ -27,7 +27,7 @@ async def async_main():
             seed=SEED,
             enhancement_instruction="make it gothic",
         )
-        print(image_models.ideogram.ideogram_v_2a["model"], image_paths)
+        print(image_models.openai.gpt_image_1_azure["model"], image_paths)
 
 
 if __name__ == "__main__":
