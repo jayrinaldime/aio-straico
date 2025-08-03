@@ -18,7 +18,8 @@ from .api.v1 import models as model1
 from .api.v0 import prompt_completion as prompt_completion0
 from .api.v1 import prompt_completion as prompt_completion1
 from .api.v0 import file_upload
-from .api.v0 import image_generation, ImageSize
+from .api.v0 import image_generation as image_generation0, ImageSize
+from .api.v1 import image_generation as image_generation1
 from .api.v0_rag import (
     ChunkingMethod,
     BreakpointThresholdType,
@@ -357,25 +358,47 @@ class StraicoClient:
         seed: int = None,
         should_enhance_description: bool = False,
         enhancement_instruction: str = None,
+        v=None,
     ):
         if type(model) == dict and "model" in model:
             model = model["model"]
         elif type(model) == Model:
             model = model.model
+        if v == 0 or model in (
+            "openai/dall-e-3",
+            "flux/1.1",
+            "ideogram/V_2A",
+            "ideogram/V_2A_TURBO",
+            "ideogram/V_2",
+            "ideogram/V_2_TURBO",
+            "ideogram/V_1",
+            "ideogram/V_1_TURBO",
+        ):
 
-        response = image_generation(
-            self._session,
-            self.BASE_URL,
-            self._header,
-            model=model,
-            description=description,
-            size=size,
-            variations=variations,
-            seed=seed,
-            should_enhance_description=should_enhance_description,
-            enhancement_instruction=enhancement_instruction,
-            **self._client_settings,
-        )
+            response = image_generation0(
+                self._session,
+                self.BASE_URL,
+                self._header,
+                model=model,
+                description=description,
+                size=size,
+                variations=variations,
+                seed=seed,
+                should_enhance_description=should_enhance_description,
+                enhancement_instruction=enhancement_instruction,
+                **self._client_settings,
+            )
+        else:
+            response = image_generation1(
+                self._session,
+                self.BASE_URL,
+                self._header,
+                model=model,
+                description=description,
+                size=size,
+                variations=variations,
+                **self._client_settings,
+            )
         if response.status_code == 201 and response.json()["success"]:
             return response.json()["data"]
         elif self._on_fail_callback is not None:

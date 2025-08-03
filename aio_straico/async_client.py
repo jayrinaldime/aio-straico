@@ -10,7 +10,8 @@ from .api.v1 import aio_models as aio_model1
 from .api.v0 import aio_prompt_completion as aio_prompt_completion0
 from .api.v1 import aio_prompt_completion as aio_prompt_completion1
 from .api.v0 import aio_file_upload
-from .api.v0 import aio_image_generation, ImageSize
+from .api.v0 import aio_image_generation as aio_image_generation0, ImageSize
+from .api.v1 import aio_image_generation as aio_image_generation1
 from .api.smartllmselector import ModelSelector
 from httpx import RemoteProtocolError
 from pathlib import Path
@@ -345,25 +346,47 @@ class AsyncStraicoClient:
         seed: int = None,
         should_enhance_description: bool = False,
         enhancement_instruction: str = None,
+        v=None,
     ):
-        if type(model) == dict and "model" in model:
+        if isinstance(model, dict) and "model" in model:
             model = model["model"]
-        elif type(model) == Model:
+        elif isinstance(model, Model):
             model = model.model
 
-        response = await aio_image_generation(
-            self._session,
-            self.BASE_URL,
-            self._header,
-            model=model,
-            description=description,
-            size=size,
-            variations=variations,
-            seed=seed,
-            should_enhance_description=should_enhance_description,
-            enhancement_instruction=enhancement_instruction,
-            **self._client_settings,
-        )
+        if v == 0 or model in (
+            "openai/dall-e-3",
+            "flux/1.1",
+            "ideogram/V_2A",
+            "ideogram/V_2A_TURBO",
+            "ideogram/V_2",
+            "ideogram/V_2_TURBO",
+            "ideogram/V_1",
+            "ideogram/V_1_TURBO",
+        ):
+            response = await aio_image_generation0(
+                self._session,
+                self.BASE_URL,
+                self._header,
+                model=model,
+                description=description,
+                size=size,
+                variations=variations,
+                seed=seed,
+                should_enhance_description=should_enhance_description,
+                enhancement_instruction=enhancement_instruction,
+                **self._client_settings,
+            )
+        else:
+            response = await aio_image_generation0(
+                self._session,
+                self.BASE_URL,
+                self._header,
+                model=model,
+                description=description,
+                size=size,
+                variations=variations,
+                **self._client_settings,
+            )
         if response.status_code == 201 and response.json()["success"]:
             return response.json()["data"]
         elif self._on_fail_callback is not None:

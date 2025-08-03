@@ -1,6 +1,7 @@
 from ..utils.tracing import observe, tracing_context, TRACING_ENABLED
 from .smartllmselector import ModelSelector
 from typing import List
+from .v0 import ImageSize, ImageSizer
 
 
 async def aio_models(session, base_url: str, headers: dict, **settings):
@@ -214,6 +215,132 @@ def prompt_completion(
                     "total_cost": json_data["data"]["overall_price"]["total"],
                 },
                 metadata=meta,
+                status_message=str(response.status_code),
+            )
+
+        else:
+            tracing_context.update_current_observation(
+                output=response.text, status_message=str(response.status_code)
+            )
+    return response
+
+
+@observe(as_type="generation")
+async def aio_image_generation(
+    session,
+    base_url: str,
+    headers: dict,
+    *,
+    model: str,
+    description: str,
+    size: ImageSize | str,
+    variations: int,
+    **settings,
+):
+    url = f"{base_url}/v1/image/generation"
+
+    if not (0 < variations <= 4):
+        raise Exception(f"Error variation size should be 1 to 4 got {variations}")
+
+    size_type = type(size)
+    if size_type == str and size not in [
+        ImageSize.square.value,
+        ImageSize.portrait.value,
+        ImageSize.landscape.value,
+    ]:
+        raise Exception(f"Unknown Image Size {size}")
+    elif size_type == ImageSize:
+        size = size.value
+
+    json_body = {
+        "model": model,
+        "description": description,
+        "size": size,
+        "variations": variations,
+    }
+
+    if "timeout" not in settings:
+        settings["timeout"] = 300
+
+    if TRACING_ENABLED:
+        tracing = {"size": size, "variations": variations, **settings}
+        tracing_context.update_current_observation(
+            input=description, model=model, model_parameters=tracing
+        )
+    response = await session.post(url, headers=headers, json=json_body, **settings)
+    if TRACING_ENABLED:
+        if response.status_code == 201 and response.json()["success"]:
+            json_data = response.json()
+            output = dict(json_data["data"])
+            del output["price"]
+            tracing_context.update_current_observation(
+                output=output,
+                usage_details={
+                    "total_cost": json_data["data"]["price"]["total"],
+                },
+                status_message=str(response.status_code),
+            )
+
+        else:
+            tracing_context.update_current_observation(
+                output=response.text, status_message=str(response.status_code)
+            )
+    return response
+
+
+@observe(as_type="generation")
+def image_generation(
+    session,
+    base_url: str,
+    headers: dict,
+    *,
+    model: str,
+    description: str,
+    size: ImageSize | str,
+    variations: int,
+    **settings,
+):
+    url = f"{base_url}/v1/image/generation"
+
+    if not (0 < variations <= 4):
+        raise Exception(f"Error variation size should be 1 to 4 got {variations}")
+
+    size_type = type(size)
+    if size_type == str and size not in [
+        ImageSize.square.value,
+        ImageSize.portrait.value,
+        ImageSize.landscape.value,
+    ]:
+        raise Exception(f"Unknown Image Size {size}")
+    elif size_type == ImageSize:
+        size = size.value
+
+    json_body = {
+        "model": model,
+        "description": description,
+        "size": size,
+        "variations": variations,
+    }
+
+    if "timeout" not in settings:
+        settings["timeout"] = 300
+
+    if TRACING_ENABLED:
+        tracing = {"size": size, "variations": variations, **settings}
+        tracing_context.update_current_observation(
+            input=description, model=model, model_parameters=tracing
+        )
+    response = session.post(url, headers=headers, json=json_body, **settings)
+    if TRACING_ENABLED:
+        if response.status_code == 201 and response.json()["success"]:
+            json_data = response.json()
+            output = dict(json_data["data"])
+            del output["price"]
+            tracing_context.update_current_observation(
+                output=output,
+                usage_details={
+                    "total_cost": json_data["data"]["price"]["total"],
+                },
                 status_message=str(response.status_code),
             )
 

@@ -35,6 +35,8 @@ async def aio_image_to_video(
         "duration": duration,
         "image_url": image_url,
     }
+    if "timeout" not in settings:
+        settings["timeout"] = 300
     response = await session.post(url, headers=headers, json=payload, **settings)
     return response
 
@@ -58,5 +60,7 @@ def image_to_video(
         "duration": duration,
         "image_url": image_url,
     }
+    if "timeout" not in settings:
+        settings["timeout"] = 300
     response = session.post(url, headers=headers, data=payload, **settings)
     return response
