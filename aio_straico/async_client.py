@@ -377,7 +377,7 @@ class AsyncStraicoClient:
                 **self._client_settings,
             )
         else:
-            response = await aio_image_generation0(
+            response = await aio_image_generation1(
                 self._session,
                 self.BASE_URL,
                 self._header,
@@ -958,7 +958,6 @@ class AsyncStraicoClient:
     #################################
     # Image to Video API
     ##############################
-    # ImageToVideoModel, VideoSize, aio_image_to_video
     @aio_retry_on_disconnect
     async def image_to_video(
         self,
